@@ -12,7 +12,6 @@ interface CyberVoiceCardProps {
   defaultToLang?: string;
   showSwapButton?: boolean;
   isRemoteSession?: boolean;
-  isFlipped?: boolean;
   userId?: "user1" | "user2";
 }
 
@@ -23,7 +22,6 @@ export function CyberVoiceCard({
   defaultToLang = "FR",
   showSwapButton = true,
   isRemoteSession = false,
-  isFlipped = false,
   userId = "user1",
 }: CyberVoiceCardProps) {
   const [fromLang, setFromLang] = useState(defaultFromLang);
@@ -93,11 +91,7 @@ export function CyberVoiceCard({
   return (
     <HoloCard
       variant="premium"
-      className={cn(
-        "w-full max-w-md mx-auto space-y-6 relative",
-        isFlipped && "transform rotate-180",
-        className,
-      )}
+      className={cn("w-full max-w-md mx-auto space-y-6 relative", className)}
       glow={voiceStatus !== "idle"}
       animated={isActive}
     >
