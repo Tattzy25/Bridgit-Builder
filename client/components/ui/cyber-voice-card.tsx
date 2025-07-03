@@ -2,7 +2,9 @@ import { cn } from "@/lib/utils";
 import { HoloCard } from "./holo-card";
 import { CyberButton } from "./cyber-button";
 import { LanguageSelector } from "./language-selector";
-import { Mic, ArrowLeftRight, Zap, Radio } from "lucide-react";
+import { VoiceVisualizer } from "./voice-visualizer";
+import { useVoiceFSM, VoiceState } from "@/hooks/use-voice-fsm";
+import { Mic, ArrowLeftRight, Wifi, WifiOff } from "lucide-react";
 import { useState } from "react";
 
 interface CyberVoiceCardProps {
@@ -13,6 +15,7 @@ interface CyberVoiceCardProps {
   showSwapButton?: boolean;
   isRemoteSession?: boolean;
   userId?: "user1" | "user2";
+  sessionCode?: string;
 }
 
 export function CyberVoiceCard({
@@ -23,88 +26,80 @@ export function CyberVoiceCard({
   showSwapButton = true,
   isRemoteSession = false,
   userId = "user1",
+  sessionCode,
 }: CyberVoiceCardProps) {
   const [fromLang, setFromLang] = useState(defaultFromLang);
   const [toLang, setToLang] = useState(defaultToLang);
-  const [voiceStatus, setVoiceStatus] = useState<
-    "idle" | "listening" | "processing" | "speaking" | "sending"
-  >("idle");
-  const [audioLevel, setAudioLevel] = useState(0);
-  const [isConnected, setIsConnected] = useState(isRemoteSession);
+  const [error, setError] = useState<string | null>(null);
+
+  // Initialize Voice FSM
+  const { state, data, isListening, toggleMicrophone } = useVoiceFSM({
+    fromLang,
+    toLang,
+    isRemoteSession,
+    userId,
+    onStateChange: (newState: VoiceState) => {
+      console.log(`Voice FSM: ${newState}`);
+      // TODO: Publish state to Ably if remote session
+    },
+    onDataChange: (voiceData) => {
+      console.log("Voice data updated:", voiceData);
+    },
+    onError: (errorMsg) => {
+      setError(errorMsg);
+      setTimeout(() => setError(null), 5000);
+    },
+  });
 
   const handleSwapLanguages = () => {
     setFromLang(toLang);
     setToLang(fromLang);
   };
 
-  const handleMicClick = () => {
-    if (voiceStatus === "idle") {
-      setVoiceStatus("listening");
-      // Start voice recording
-      setTimeout(() => {
-        setVoiceStatus("processing");
-        setTimeout(() => {
-          if (isRemoteSession) {
-            setVoiceStatus("sending");
-            setTimeout(() => setVoiceStatus("idle"), 1000);
-          } else {
-            setVoiceStatus("speaking");
-            setTimeout(() => setVoiceStatus("idle"), 2000);
-          }
-        }, 1500);
-      }, 2000);
+  const getConnectionStatus = () => {
+    if (isRemoteSession && data.isConnected) {
+      return {
+        icon: Wifi,
+        text: "LIVE",
+        color: "from-bridgit-neon to-green-400",
+      };
+    } else if (isRemoteSession && !data.isConnected) {
+      return {
+        icon: WifiOff,
+        text: "OFFLINE",
+        color: "from-red-500 to-red-600",
+      };
     } else {
-      setVoiceStatus("idle");
+      return { icon: null, text: "LOCAL", color: "from-muted/50 to-muted/70" };
     }
   };
 
-  const getStatusText = () => {
-    switch (voiceStatus) {
-      case "listening":
-        return "🎤 Listening...";
-      case "processing":
-        return "⚡ Processing...";
-      case "speaking":
-        return "🔊 Speaking...";
-      case "sending":
-        return "📡 Sending...";
-      default:
-        return isConnected ? "🟢 Ready" : "⚪ Local Mode";
-    }
-  };
-
-  const getStatusColor = () => {
-    switch (voiceStatus) {
-      case "listening":
-        return "text-bridgit-neon";
-      case "processing":
-        return "text-bridgit-secondary";
-      case "speaking":
-        return "text-bridgit-accent";
-      case "sending":
-        return "text-bridgit-primary";
-      default:
-        return isConnected ? "text-bridgit-neon" : "text-muted-foreground";
-    }
-  };
+  const status = getConnectionStatus();
 
   return (
     <HoloCard
       variant="premium"
       className={cn("w-full max-w-md mx-auto space-y-6 relative", className)}
-      glow={voiceStatus !== "idle"}
+      glow={state !== "IDLE"}
       animated={isActive}
     >
-      {/* Voice Status indicator */}
-      <div className="absolute top-4 right-4">
+      {/* Error Display */}
+      {error && (
+        <div className="absolute top-4 left-4 right-16 bg-red-500/20 border border-red-500/50 rounded-neu px-3 py-2 text-xs text-red-300 z-20">
+          {error}
+        </div>
+      )}
+
+      {/* Connection Status Badge */}
+      <div className="absolute -top-2 -right-2 z-10">
         <div
           className={cn(
-            "px-3 py-1 rounded-full text-xs font-semibold border border-white/10 backdrop-blur-sm",
-            "bg-neubg/50 transition-all duration-300",
-            getStatusColor(),
+            "px-3 py-1 text-xs font-bold rounded-full shadow-lg border border-white/10 flex items-center gap-1",
+            `bg-gradient-to-r ${status.color} text-white`,
           )}
         >
-          {getStatusText()}
+          {status.icon && <status.icon className="h-3 w-3" />}
+          {status.text}
         </div>
       </div>
 
@@ -122,6 +117,7 @@ export function CyberVoiceCard({
             variant="ghost"
             size="icon"
             className="shrink-0 hover:rotate-180 transition-transform duration-500"
+            disabled={state !== "IDLE"}
           >
             <ArrowLeftRight className="h-4 w-4" />
           </CyberButton>
@@ -134,130 +130,81 @@ export function CyberVoiceCard({
         />
       </div>
 
-      {/* Voice Activity Display */}
-      <div className="space-y-4">
-        {/* Input Voice Level */}
-        <div
+      {/* Voice Visualizer */}
+      <VoiceVisualizer
+        state={state}
+        audioLevel={data.audioLevel}
+        partialText={data.partialText}
+        finalText={data.finalText}
+        translatedText={data.translatedText}
+      />
+
+      {/* Main Microphone Button */}
+      <div className="flex justify-center">
+        <CyberButton
+          onClick={toggleMicrophone}
+          variant={
+            isListening ? "neon" : state !== "IDLE" ? "primary" : "default"
+          }
+          size="xl"
           className={cn(
-            "neu-input min-h-[80px] flex items-center justify-center relative overflow-hidden",
-            voiceStatus === "listening" &&
-              "border-bridgit-neon/50 shadow-[0_0_30px_-10px] shadow-bridgit-neon/40",
+            "neu-microphone relative group",
+            "hover:scale-110 active:scale-95",
+            "transition-all duration-300",
+            (isListening || state !== "IDLE") && "animate-glow-pulse",
           )}
+          glow={isListening || state !== "IDLE"}
         >
-          {voiceStatus === "listening" && (
-            <div className="absolute inset-0 bg-gradient-to-r from-bridgit-neon/10 via-transparent to-bridgit-neon/10 animate-pulse" />
-          )}
+          <Mic
+            className={cn(
+              "h-8 w-8 transition-all duration-300",
+              isListening || state !== "IDLE"
+                ? "text-black scale-110"
+                : "text-bridgit-primary",
+            )}
+          />
 
-          {/* Voice Level Bars */}
-          <div className="flex items-center gap-1">
-            {[...Array(8)].map((_, i) => (
+          {/* Pulse rings when active */}
+          {(isListening || state !== "IDLE") && (
+            <>
+              <div className="absolute inset-0 rounded-full border-2 border-bridgit-neon/30 animate-ping" />
               <div
-                key={i}
-                className={cn(
-                  "w-2 rounded-full transition-all duration-150",
-                  voiceStatus === "listening"
-                    ? "bg-bridgit-neon"
-                    : "bg-muted/20",
-                )}
-                style={{
-                  height:
-                    voiceStatus === "listening"
-                      ? `${Math.random() * 40 + 10}px`
-                      : "4px",
-                  animationDelay: `${i * 100}ms`,
-                }}
+                className="absolute inset-0 rounded-full border border-bridgit-neon/20 animate-ping"
+                style={{ animationDelay: "0.5s" }}
               />
-            ))}
-          </div>
-
-          <div className="absolute bottom-2 left-4 text-xs text-muted-foreground">
-            {userId === "user1" ? "You" : "Remote User"}
-          </div>
-        </div>
-
-        {/* Output Voice Level */}
-        <div
-          className={cn(
-            "neu-card-inset min-h-[80px] flex items-center justify-center relative overflow-hidden",
-            voiceStatus === "speaking" && "border-bridgit-accent/50",
+            </>
           )}
-        >
-          {voiceStatus === "speaking" && (
-            <div className="absolute inset-0 bg-gradient-to-r from-bridgit-accent/10 via-transparent to-bridgit-accent/10 animate-pulse" />
+        </CyberButton>
+      </div>
+
+      {/* User Indicator */}
+      <div className="text-center">
+        <div className="text-xs text-muted-foreground">
+          {isRemoteSession ? (
+            sessionCode ? (
+              <span>
+                Session:{" "}
+                <span className="font-mono text-bridgit-primary">
+                  {sessionCode}
+                </span>
+              </span>
+            ) : (
+              "Remote Mode"
+            )
+          ) : (
+            "Local Translation Mode"
           )}
-
-          {/* Output Level Bars */}
-          <div className="flex items-center gap-1">
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "w-2 rounded-full transition-all duration-150",
-                  voiceStatus === "speaking"
-                    ? "bg-bridgit-accent"
-                    : "bg-muted/10",
-                )}
-                style={{
-                  height:
-                    voiceStatus === "speaking"
-                      ? `${Math.random() * 40 + 10}px`
-                      : "4px",
-                  animationDelay: `${i * 100}ms`,
-                }}
-              />
-            ))}
-          </div>
-
-          <div className="absolute bottom-2 right-4 text-xs text-muted-foreground">
-            {toLang} Output
-          </div>
         </div>
       </div>
 
-      {/* Microphone Button - Moved to top level */}
-      <CyberButton
-        onClick={handleMicClick}
-        variant={voiceStatus !== "idle" ? "neon" : "default"}
-        size="xl"
-        className={cn(
-          "neu-microphone relative group",
-          "hover:scale-110 active:scale-95",
-          "transition-all duration-300",
-          voiceStatus !== "idle" && "animate-glow-pulse",
-        )}
-        glow={voiceStatus !== "idle"}
-      >
-        <Mic
-          className={cn(
-            "h-8 w-8 transition-all duration-300",
-            voiceStatus !== "idle"
-              ? "text-black scale-110"
-              : "text-bridgit-primary",
-          )}
-        />
-
-        {/* Pulse rings when active */}
-        {voiceStatus !== "idle" && (
-          <>
-            <div className="absolute inset-0 rounded-full border-2 border-bridgit-neon/30 animate-ping" />
-            <div className="absolute inset-0 rounded-full border border-bridgit-neon/20 animate-ping animation-delay-75" />
-          </>
-        )}
-      </CyberButton>
-
-      {/* Connection Status Badge */}
-      <div className="absolute -top-2 -right-2">
-        <div
-          className={cn(
-            "px-2 py-1 text-xs font-bold rounded-full shadow-lg border border-white/10",
-            isConnected
-              ? "text-black bg-gradient-to-r from-bridgit-neon to-green-400"
-              : "text-white bg-gradient-to-r from-muted/50 to-muted/70",
-          )}
-        >
-          {isConnected ? "LIVE" : "LOCAL"}
+      {/* Touchless Instructions */}
+      {isListening && state === "IDLE" && (
+        <div className="text-center">
+          <div className="text-xs text-bridgit-neon animate-pulse">
+            ✨ Touchless mode active - just start speaking!
+          </div>
         </div>
-      </div>
+      )}
     </HoloCard>
   );
 }
