@@ -338,16 +338,18 @@ export function MainMenu({
           </CyberButton>
         ))}
 
-        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mt-6">
+        <h3 className="text-sm font-semibold text-bridgit-gold uppercase tracking-wider flex items-center gap-2 mt-6">
+          <Crown className="h-4 w-4" />
           Premium Voices
         </h3>
         {["Rachel", "Drew", "Clyde", "Paul"].map((voice) => (
-          <NeumorphicButton
+          <CyberButton
             key={voice}
+            variant="gold"
             className="w-full justify-start opacity-60"
           >
             {voice} (Premium)
-          </NeumorphicButton>
+          </CyberButton>
         ))}
       </div>
     </div>
