@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { VoiceCard } from "@/components/ui/voice-card";
 import { MainMenu } from "@/components/ui/main-menu";
+import { StatusIndicator } from "@/components/ui/status-indicator";
 import { cn } from "@/lib/utils";
 
 export default function Index() {
   const [mode, setMode] = useState<"just-me" | "talk-together">("just-me");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
+  const [status, setStatus] = useState<
+    "disconnected" | "connecting" | "connected" | "speaking" | "translating"
+  >("disconnected");
 
   const handleModeChange = (newMode: "just-me" | "talk-together") => {
     setMode(newMode);
@@ -46,13 +49,9 @@ export default function Index() {
       </div>
 
       {/* Status Indicator */}
-      {isConnected && (
-        <div className="animate-fade-in">
-          <div className="neu-button px-4 py-2 text-sm text-green-600">
-            🟢 Connected
-          </div>
-        </div>
-      )}
+      <div className="animate-fade-in">
+        <StatusIndicator status={status} />
+      </div>
     </div>
   );
 
@@ -87,13 +86,12 @@ export default function Index() {
       </div>
 
       {/* Status Indicator */}
-      {isConnected && (
-        <div className="animate-fade-in">
-          <div className="neu-button px-4 py-2 text-sm text-green-600">
-            🟢 Both Connected
-          </div>
-        </div>
-      )}
+      <div className="animate-fade-in">
+        <StatusIndicator
+          status={status}
+          className={mode === "talk-together" ? "text-center" : ""}
+        />
+      </div>
     </div>
   );
 
