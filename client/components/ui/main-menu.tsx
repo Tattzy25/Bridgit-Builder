@@ -180,6 +180,60 @@ export function MainMenu({
         </div>
       </div>
 
+      {/* Token & Plan */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-bridgit-gold uppercase tracking-wider flex items-center gap-2">
+          <Crown className="h-4 w-4" />
+          Token & Plan
+        </h3>
+        <div className="space-y-3">
+          <div className="neu-card-inset p-4 text-center">
+            <div className="text-lg font-bold text-bridgit-gold">
+              247 tokens
+            </div>
+            <div className="text-xs text-muted-foreground">remaining</div>
+          </div>
+          <CyberButton variant="gold" className="w-full justify-start gap-3">
+            <Zap className="h-5 w-5" />
+            <div className="text-left">
+              <div className="font-semibold">Buy More Tokens</div>
+              <div className="text-xs opacity-80">Starting at $9.99</div>
+            </div>
+          </CyberButton>
+          <CyberButton variant="primary" className="w-full justify-start gap-3">
+            <Crown className="h-5 w-5" />
+            <div className="text-left">
+              <div className="font-semibold">Upgrade Plan</div>
+              <div className="text-xs opacity-80">Unlock premium features</div>
+            </div>
+          </CyberButton>
+        </div>
+      </div>
+
+      {/* Account */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+          <User className="h-4 w-4" />
+          Account
+        </h3>
+        <div className="space-y-3">
+          <CyberButton className="w-full justify-start gap-3">
+            <User className="h-5 w-5" />
+            <div className="text-left">
+              <div className="font-semibold">Profile</div>
+              <div className="text-xs opacity-80">Email, username, verify</div>
+            </div>
+          </CyberButton>
+          <CyberButton className="w-full justify-start gap-3">
+            <Settings className="h-5 w-5" />
+            <div className="text-left">
+              <div className="font-semibold">Sign In / Sign Up</div>
+              <div className="text-xs opacity-80">Manage account</div>
+            </div>
+          </CyberButton>
+        </div>
+      </div>
+
       {/* Quick Settings */}
       <div className="grid grid-cols-3 gap-3">
         <CyberButton
