@@ -33,10 +33,34 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // Authentication required - Step 1 of the flow
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neubg cyber-bg p-4">
-        <div className="w-full max-w-md space-y-6">
-          {/* Header */}
-          <HoloCard className="text-center space-y-4" variant="premium" glow>
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{
+          backgroundImage:
+            "url(https://cdn.builder.io/api/v1/image/assets%2Ff211fb8c7c124ed3b265fee7bf5c0654%2F0fa8a05f0c6c4a82a14ffab76905b54b)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        <div className="w-full max-w-md space-y-6 flex flex-col">
+          {/* Logo Section */}
+          <div className="flex flex-col relative min-h-[100px] p-5">
+            <section className="flex flex-col relative min-h-[100px] p-5 w-full max-w-[1200px] mx-auto">
+              <img
+                loading="lazy"
+                alt="Bridgit-AI-Logo"
+                src="https://cdn.builder.io/api/v1/image/assets%2Ff211fb8c7c124ed3b265fee7bf5c0654%2F30e1349d4cfb419e91a0da6ebdeb868d"
+                className="aspect-square object-cover object-center w-full min-h-[150px] max-w-[150px] rounded-[14px] mx-auto mt-5 border-2 border-black"
+                style={{
+                  boxShadow: "3px 3px 3px 1px rgba(0, 0, 0, 1)",
+                }}
+              />
+            </section>
+          </div>
+
+          {/* Auth Card */}
+          <HoloCard className="mx-auto" style={{ margin: "24px auto 0" }}>
             <div className="space-y-2">
               <h1 className="text-3xl font-bold text-foreground animate-neon-glow">
                 Bridgit AI
@@ -71,28 +95,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
             </div>
           </HoloCard>
 
-          {/* Auth Toggle */}
-          <HoloCard className="space-y-4">
-            <div className="grid grid-cols-2 gap-2">
-              <CyberButton
-                variant={!showSignUp ? "primary" : "ghost"}
-                onClick={() => setShowSignUp(false)}
-                className="flex-1"
-              >
-                <User className="h-4 w-4" />
-                Sign In
-              </CyberButton>
-              <CyberButton
-                variant={showSignUp ? "gold" : "ghost"}
-                onClick={() => setShowSignUp(true)}
-                className="flex-1"
-              >
-                <UserPlus className="h-4 w-4" />
-                Sign Up
-              </CyberButton>
-            </div>
-          </HoloCard>
-
           {/* Auth Component */}
           <HoloCard className="overflow-hidden">
             {showSignUp ? (
@@ -102,17 +104,51 @@ export function AuthGuard({ children }: AuthGuardProps) {
             )}
           </HoloCard>
 
-          {/* Features */}
-          <HoloCard className="text-center space-y-3" variant="ghost">
-            <h3 className="text-sm font-semibold text-bridgit-primary">
-              What You Get
-            </h3>
-            <div className="grid grid-cols-1 gap-2 text-xs text-muted-foreground">
-              <div>✨ Real-time voice translation</div>
-              <div>🌍 36+ supported languages</div>
-              <div>🔊 Premium AI voices</div>
-              <div>📱 Remote session sharing</div>
-              <div>⚡ 50 free tokens to start</div>
+          {/* Action Buttons */}
+          <HoloCard>
+            <div className="grid grid-cols-2 gap-2 relative">
+              <CyberButton
+                variant={!showSignUp ? "primary" : "ghost"}
+                onClick={() => setShowSignUp(false)}
+                className="flex-1 relative"
+              >
+                <div
+                  className="absolute inset-0 rounded-[24px]"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(to right, rgba(179, 102, 255, 0.2), rgba(51, 204, 255, 0.2))",
+                    fontSize: "30px",
+                    color: "rgba(0, 0, 0, 1)",
+                    textShadow: "1px 1px 3px rgba(255, 255, 255, 1)",
+                    fontFamily: "Audiowide, display",
+                  }}
+                >
+                  <span style={{ color: "rgb(0, 0, 0)" }}>SIGN IN</span>
+                </div>
+              </CyberButton>
+              <CyberButton
+                variant="ghost"
+                onClick={() => setShowSignUp(true)}
+                className="flex-1 relative"
+                style={{
+                  backgroundImage:
+                    "url(https://cdn.builder.io/api/v1/image/assets%2Ff211fb8c7c124ed3b265fee7bf5c0654%2F0fa8a05f0c6c4a82a14ffab76905b54b)",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "center",
+                  backgroundSize: "cover",
+                }}
+              />
+              <div
+                className="absolute top-[5px] left-[236px]"
+                style={{
+                  fontSize: "30px",
+                  color: "rgba(0, 0, 0, 1)",
+                  textShadow: "1px 1px 3px rgba(255, 255, 255, 1)",
+                  fontFamily: "Audiowide, display",
+                }}
+              >
+                <span style={{ color: "rgb(0, 0, 0)" }}>SIGN UP</span>
+              </div>
             </div>
           </HoloCard>
         </div>
