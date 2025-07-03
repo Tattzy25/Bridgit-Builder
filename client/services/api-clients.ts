@@ -41,6 +41,73 @@ export const elevenLabsClient = new ElevenLabsApi({
   apiKey: import.meta.env.VITE_ELEVENLABS_API_KEY || "",
 });
 
+// Enhanced ElevenLabs TTS Service
+export class ElevenLabsTTSClient {
+  private client: ElevenLabsApi;
+  private defaultVoiceId = "21m00Tcm4TlvDq8ikWAM"; // Rachel voice
+
+  constructor() {
+    this.client = elevenLabsClient;
+  }
+
+  async synthesizeText(
+    text: string,
+    options: {
+      voiceId?: string;
+      language?: string;
+      stability?: number;
+      similarityBoost?: number;
+    } = {},
+  ): Promise<{ audioUrl: string; duration: number }> {
+    try {
+      const voiceId = options.voiceId || this.defaultVoiceId;
+
+      const audioResponse = await this.client.textToSpeech.convert({
+        voice_id: voiceId,
+        text,
+        model_id: "eleven_multilingual_v2",
+        voice_settings: {
+          stability: options.stability || 0.5,
+          similarity_boost: options.similarityBoost || 0.75,
+        },
+      });
+
+      // Convert response to audio URL
+      const audioBuffer = await audioResponse.arrayBuffer();
+      const audioBlob = new Blob([audioBuffer], { type: "audio/mpeg" });
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      // Estimate duration (rough calculation)
+      const wordsPerMinute = 150;
+      const wordCount = text.split(" ").length;
+      const estimatedDuration = (wordCount / wordsPerMinute) * 60;
+
+      return {
+        audioUrl,
+        duration: estimatedDuration,
+      };
+    } catch (error) {
+      console.error("ElevenLabs TTS error:", error);
+      throw new Error(`Text-to-speech failed: ${error}`);
+    }
+  }
+
+  async getAvailableVoices(): Promise<Array<{ id: string; name: string }>> {
+    try {
+      const voices = await this.client.voices.getAll();
+      return voices.voices.map((voice) => ({
+        id: voice.voice_id,
+        name: voice.name,
+      }));
+    } catch (error) {
+      console.error("Get voices error:", error);
+      return [];
+    }
+  }
+}
+
+export const elevenLabsTTSClient = new ElevenLabsTTSClient();
+
 // Groq SDK for fast inference
 export const groqClient = new Groq({
   apiKey: import.meta.env.VITE_GROQ_API_KEY || "",
@@ -51,6 +118,56 @@ export const groqClient = new Groq({
 export const geminiClient = new GoogleGenerativeAI(
   import.meta.env.VITE_GEMINI_API_KEY || "",
 );
+
+// Gemini STT Service
+export class GeminiSTTClient {
+  private client: GoogleGenerativeAI;
+
+  constructor() {
+    this.client = geminiClient;
+  }
+
+  async transcribeAudio(
+    audioBlob: Blob,
+    language: string,
+  ): Promise<{ text: string; confidence: number }> {
+    try {
+      const model = this.client.getGenerativeModel({
+        model: "gemini-pro",
+      });
+
+      // Convert audio blob to base64
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      const base64Audio = btoa(
+        String.fromCharCode(...new Uint8Array(arrayBuffer)),
+      );
+
+      const prompt = `Transcribe this audio to text in ${language} language. Return only the transcribed text, no other commentary.`;
+
+      const result = await model.generateContent([
+        {
+          inlineData: {
+            data: base64Audio,
+            mimeType: audioBlob.type || "audio/webm",
+          },
+        },
+        prompt,
+      ]);
+
+      const text = result.response.text().trim();
+
+      return {
+        text,
+        confidence: 0.95, // Gemini doesn't provide confidence scores
+      };
+    } catch (error) {
+      console.error("Gemini STT error:", error);
+      throw new Error(`Speech-to-text failed: ${error}`);
+    }
+  }
+}
+
+export const geminiSTTClient = new GeminiSTTClient();
 
 // DeepL Translation Service
 export class DeepLClient {
