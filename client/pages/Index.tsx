@@ -57,35 +57,38 @@ export default function Index() {
   );
 
   const renderTalkTogetherMode = () => (
-    <div className="min-h-screen bg-neubg flex flex-col lg:flex-row items-center justify-center p-4 gap-8">
-      {/* First Voice Card */}
-      <div className="animate-fade-in flex-1 max-w-md">
-        <VoiceCard
-          placeholder="Enter text to translate"
-          translationPlaceholder="Translation will appear here"
-          defaultFromLang="EN"
-          defaultToLang="FR"
-        />
-      </div>
+    <div className="min-h-screen bg-neubg flex flex-col items-center justify-center p-4 gap-6 lg:gap-8">
+      {/* Mobile: Stacked layout, Desktop: Side by side */}
+      <div className="w-full max-w-6xl flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-8">
+        {/* First Voice Card */}
+        <div className="animate-fade-in w-full lg:flex-1 max-w-md">
+          <VoiceCard
+            placeholder="Enter text to translate"
+            translationPlaceholder="Translation will appear here"
+            defaultFromLang="EN"
+            defaultToLang="FR"
+          />
+        </div>
 
-      {/* Logo in center */}
-      <div className="animate-fade-in">
-        <BridgitLogo />
-      </div>
+        {/* Logo in center */}
+        <div className="animate-fade-in lg:mx-4">
+          <BridgitLogo />
+        </div>
 
-      {/* Second Voice Card */}
-      <div className="animate-fade-in flex-1 max-w-md">
-        <VoiceCard
-          placeholder="Enter text to translate"
-          translationPlaceholder="Translation will appear here"
-          defaultFromLang="FR"
-          defaultToLang="EN"
-        />
+        {/* Second Voice Card */}
+        <div className="animate-fade-in w-full lg:flex-1 max-w-md">
+          <VoiceCard
+            placeholder="Enter text to translate"
+            translationPlaceholder="Translation will appear here"
+            defaultFromLang="FR"
+            defaultToLang="EN"
+          />
+        </div>
       </div>
 
       {/* Status Indicator */}
       {isConnected && (
-        <div className="absolute bottom-8 animate-fade-in">
+        <div className="animate-fade-in">
           <div className="neu-button px-4 py-2 text-sm text-green-600">
             🟢 Both Connected
           </div>

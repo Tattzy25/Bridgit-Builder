@@ -56,19 +56,30 @@ export function LanguageSelector({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-48 bg-neubg rounded-neu shadow-neu border border-border/20 py-2 z-50">
-          {languages.map((language) => (
-            <button
-              key={language.code}
-              onClick={() => handleSelect(language)}
-              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-neubg/80 transition-colors"
-            >
-              <span className="text-lg">{language.flag}</span>
-              <span className="font-medium">{language.code}</span>
-              <span className="text-muted-foreground">{language.name}</span>
-            </button>
-          ))}
-        </div>
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setIsOpen(false)}
+          />
+          {/* Dropdown */}
+          <div className="absolute top-full left-0 mt-2 w-48 bg-neubg rounded-neu shadow-neu border border-border/20 py-2 z-50 max-h-60 overflow-y-auto">
+            {languages.map((language) => (
+              <button
+                key={language.code}
+                onClick={() => handleSelect(language)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-neubg/80 transition-colors",
+                  language.code === value && "bg-bridgit-primary/10",
+                )}
+              >
+                <span className="text-lg">{language.flag}</span>
+                <span className="font-medium">{language.code}</span>
+                <span className="text-muted-foreground">{language.name}</span>
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
