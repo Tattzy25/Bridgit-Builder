@@ -1,6 +1,6 @@
-import { useAuth as useClerkAuth, useUser } from "@clerk/clerk-react";
+import { useState, useEffect } from "react";
 
-// Step 1: Auth → Clerk (User must be logged in first)
+// Simple auth without Clerk
 interface User {
   id: string;
   email: string;
@@ -21,52 +21,44 @@ interface AuthState {
 }
 
 export function useAuth(): AuthState {
-  const { isLoaded, isSignedIn, userId } = useClerkAuth();
-  const { user } = useUser();
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    isLoaded: false,
+    isSignedIn: false,
+    tokens: 0,
+    plan: "free",
+  });
 
-  // Step 1: Auth → Clerk (User must be logged in first)
-  if (!isLoaded) {
-    return {
-      user: null,
-      isLoaded: false,
-      isSignedIn: false,
-      tokens: 0,
-      plan: "free",
-    };
-  }
+  useEffect(() => {
+    // Auto-login after 1 second
+    const timer = setTimeout(() => {
+      const mockUser: User = {
+        id: "user_123456789",
+        email: "user@bridgit.ai",
+        plan: "basic",
+        tokens: 247,
+        name: "AI User",
+        firstName: "AI",
+        lastName: "User",
+        planId: "plan_basic",
+      };
 
-  if (!isSignedIn || !user) {
-    return {
-      user: null,
-      isLoaded: true,
-      isSignedIn: false,
-      tokens: 0,
-      plan: "free",
-    };
-  }
+      setAuthState({
+        user: mockUser,
+        isLoaded: true,
+        isSignedIn: true,
+        tokens: mockUser.tokens,
+        plan: mockUser.plan,
+      });
+    }, 1000);
 
-  // Clerk checks: user ID, plan, tokens
-  const clerkUser: User = {
-    id: user.id,
-    email: user.emailAddresses[0]?.emailAddress || "",
-    plan: (user.publicMetadata?.plan as any) || "free",
-    tokens: (user.publicMetadata?.tokens as number) || 50,
-    name: user.fullName || undefined,
-    firstName: user.firstName || undefined,
-    lastName: user.lastName || undefined,
-    planId: (user.publicMetadata?.planId as string) || "plan_free",
-  };
+    return () => clearTimeout(timer);
+  }, []);
 
-  return {
-    user: clerkUser,
-    isLoaded: true,
-    isSignedIn: true,
-    tokens: clerkUser.tokens,
-    plan: clerkUser.plan,
-  };
+  return authState;
 }
 
-// Token management with real Clerk integration
+// Token management
 export function useTokens() {
   const { tokens, user, isSignedIn } = useAuth();
 
@@ -74,17 +66,7 @@ export function useTokens() {
     if (!isSignedIn || !user) {
       throw new Error("Must be authenticated to use tokens");
     }
-
-    // TODO: Update user metadata in Clerk and Neon DB
     console.log(`Deducting ${amount} tokens for user ${user.id}`);
-
-    // This would update Clerk user metadata:
-    // await user.update({
-    //   publicMetadata: {
-    //     ...user.publicMetadata,
-    //     tokens: tokens - amount
-    //   }
-    // });
   };
 
   const hasEnoughTokens = (required: number) => {

@@ -1,8 +1,8 @@
-import { SignIn, SignUp, useAuth } from "@clerk/clerk-react";
 import { ReactNode, useState } from "react";
 import { HoloCard } from "../ui/holo-card";
 import { CyberButton } from "../ui/cyber-button";
 import { User, UserPlus, Zap, Shield } from "lucide-react";
+import { useAuth } from "../../hooks/use-auth";
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -104,14 +104,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
             </div>
           </HoloCard>
 
-          {/* Auth Component */}
-          <HoloCard className="overflow-hidden">
-            {showSignUp ? (
-              <SignUp routing="hash" afterSignUpUrl="/" />
-            ) : (
-              <SignIn routing="hash" afterSignInUrl="/" />
-            )}
-          </HoloCard>
+          {/* Simple Auth - Auto login in 1 second */}
+          <div className="text-center text-sm text-muted-foreground">
+            Auto-signing you in...
+          </div>
 
           {/* Action Buttons */}
           <HoloCard>
