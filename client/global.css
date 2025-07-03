@@ -362,4 +362,21 @@
       hsl(var(--bridgit-secondary) / 0.8)
     );
   }
+
+  /* Mobile flip support for Talk Together mode */
+  @media (max-width: 1024px) {
+    .mobile-flip-first {
+      transform: rotate(180deg);
+    }
+
+    .mobile-flip-content {
+      transform: rotate(180deg);
+    }
+  }
+
+  @media (min-width: 1025px) {
+    .mobile-flip-first {
+      transform: none !important;
+    }
+  }
 }
