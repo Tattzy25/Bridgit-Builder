@@ -2,7 +2,7 @@
 import Ably from "ably";
 import Spaces from "@ably/spaces";
 import { ChatClient } from "@ably/chat";
-import { ElevenLabsApi } from "@elevenlabs/elevenlabs-js";
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import Groq from "groq-sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { neon } from "@neondatabase/serverless";
@@ -37,13 +37,13 @@ export const ablySpaces = new Spaces(ablyClient);
 export const ablyChat = new ChatClient(ablyClient);
 
 // ElevenLabs TTS SDK
-export const elevenLabsClient = new ElevenLabsApi({
+export const elevenLabsClient = new ElevenLabsClient({
   apiKey: import.meta.env.VITE_ELEVENLABS_API_KEY || "",
 });
 
 // Enhanced ElevenLabs TTS Service
 export class ElevenLabsTTSClient {
-  private client: ElevenLabsApi;
+  private client: ElevenLabsClient;
   private defaultVoiceId = "21m00Tcm4TlvDq8ikWAM"; // Rachel voice
 
   constructor() {
