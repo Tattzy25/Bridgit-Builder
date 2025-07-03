@@ -133,6 +133,7 @@ export default function Index() {
             className="w-full max-w-lg"
             isActive={isConnected}
             isRemoteSession={sessionCode !== null}
+            sessionCode={sessionCode || undefined}
             defaultFromLang="EN"
             defaultToLang="FR"
             userId="user1"
