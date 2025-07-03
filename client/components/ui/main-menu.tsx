@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { HoloCard } from "./holo-card";
 import { CyberButton } from "./cyber-button";
+import { PricingMenu } from "./pricing-menu";
 import {
   Settings,
   Mic,
@@ -14,6 +15,7 @@ import {
   Zap,
   Brain,
   Shield,
+  CreditCard,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -41,7 +43,7 @@ export function MainMenu({
   onEndSession = () => {},
 }: MainMenuProps) {
   const [activeTab, setActiveTab] = useState<
-    "main" | "settings" | "colors" | "voice"
+    "main" | "settings" | "colors" | "voice" | "pricing"
   >("main");
 
   if (!isOpen) return null;
@@ -193,18 +195,26 @@ export function MainMenu({
             </div>
             <div className="text-xs text-muted-foreground">remaining</div>
           </div>
-          <CyberButton variant="gold" className="w-full justify-start gap-3">
+          <CyberButton
+            variant="gold"
+            className="w-full justify-start gap-3"
+            onClick={() => setActiveTab("pricing")}
+          >
             <Zap className="h-5 w-5" />
             <div className="text-left">
               <div className="font-semibold">Buy More Tokens</div>
-              <div className="text-xs opacity-80">Starting at $9.99</div>
+              <div className="text-xs opacity-80">Starting at $4.99</div>
             </div>
           </CyberButton>
-          <CyberButton variant="primary" className="w-full justify-start gap-3">
+          <CyberButton
+            variant="primary"
+            className="w-full justify-start gap-3"
+            onClick={() => setActiveTab("pricing")}
+          >
             <Crown className="h-5 w-5" />
             <div className="text-left">
               <div className="font-semibold">Upgrade Plan</div>
-              <div className="text-xs opacity-80">Unlock premium features</div>
+              <div className="text-xs opacity-80">Starting at $9.99/month</div>
             </div>
           </CyberButton>
         </div>
@@ -235,7 +245,7 @@ export function MainMenu({
       </div>
 
       {/* Quick Settings */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <CyberButton
           variant="ghost"
           onClick={() => setActiveTab("voice")}
@@ -252,13 +262,25 @@ export function MainMenu({
           <Palette className="h-5 w-5 text-bridgit-secondary" />
           <span className="text-xs font-medium">Theme</span>
         </CyberButton>
+      </div>
+
+      {/* Pricing & Settings */}
+      <div className="grid grid-cols-2 gap-3">
+        <CyberButton
+          variant="ghost"
+          onClick={() => setActiveTab("pricing")}
+          className="flex-col h-20 gap-2 hover:bg-bridgit-gold/10"
+        >
+          <CreditCard className="h-5 w-5 text-bridgit-gold" />
+          <span className="text-xs font-medium">Pricing</span>
+        </CyberButton>
         <CyberButton
           variant="ghost"
           onClick={() => setActiveTab("settings")}
           className="flex-col h-20 gap-2 hover:bg-bridgit-accent/10"
         >
           <Settings className="h-5 w-5 text-bridgit-accent" />
-          <span className="text-xs font-medium">Premium</span>
+          <span className="text-xs font-medium">Settings</span>
         </CyberButton>
       </div>
     </div>
@@ -421,6 +443,13 @@ export function MainMenu({
         {activeTab === "settings" && renderSettingsTab()}
         {activeTab === "colors" && renderColorsTab()}
         {activeTab === "voice" && renderVoiceTab()}
+        {activeTab === "pricing" && (
+          <PricingMenu
+            currentPlan="basic" // TODO: Get from user data
+            tokenBalance={247} // TODO: Get from user data
+            onClose={() => setActiveTab("main")}
+          />
+        )}
 
         <div className="mt-8 pt-6 border-t border-white/10">
           <CyberButton
