@@ -48,7 +48,7 @@ export function VoiceCard({
       <div className="flex items-center justify-between gap-4">
         <LanguageSelector
           value={fromLang}
-          onChange={(lang) => setFromLang(lang.code)}
+          onChange={(lang: DeepLLanguage) => setFromLang(lang.code)}
         />
 
         {showSwapButton && (
@@ -62,7 +62,7 @@ export function VoiceCard({
 
         <LanguageSelector
           value={toLang}
-          onChange={(lang) => setToLang(lang.code)}
+          onChange={(lang: DeepLLanguage) => setToLang(lang.code)}
         />
       </div>
 
