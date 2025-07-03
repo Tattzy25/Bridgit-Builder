@@ -46,13 +46,27 @@ export function LanguageSelector({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="neu-button flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground min-w-[100px]"
+        className={cn(
+          "relative overflow-hidden",
+          "bg-gradient-to-r from-neulight/60 to-neubg/80",
+          "backdrop-blur-md border border-white/10 rounded-neu",
+          "flex items-center gap-3 px-5 py-4 text-sm font-semibold text-foreground",
+          "min-w-[120px] transition-all duration-300",
+          "hover:shadow-[0_0_30px_-10px] hover:shadow-bridgit-primary/30",
+          "hover:border-bridgit-primary/30",
+        )}
       >
-        <span className="text-lg">{selectedLanguage.flag}</span>
-        <span>{selectedLanguage.code}</span>
+        <span className="text-xl">{selectedLanguage.flag}</span>
+        <span className="tracking-wide">{selectedLanguage.code}</span>
         <ChevronDown
-          className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")}
+          className={cn(
+            "h-4 w-4 transition-all duration-300 text-bridgit-primary",
+            isOpen && "rotate-180 text-bridgit-secondary",
+          )}
         />
+
+        {/* Hover effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-bridgit-primary/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
       </button>
 
       {isOpen && (
@@ -63,19 +77,26 @@ export function LanguageSelector({
             onClick={() => setIsOpen(false)}
           />
           {/* Dropdown */}
-          <div className="absolute top-full left-0 mt-2 w-48 bg-neubg rounded-neu shadow-neu border border-border/20 py-2 z-50 max-h-60 overflow-y-auto">
+          <div className="absolute top-full left-0 mt-3 w-56 bg-neubg/90 backdrop-blur-xl rounded-neu-lg border border-white/10 py-3 z-50 max-h-64 overflow-y-auto shadow-[0_25px_50px_-12px] shadow-black/25">
             {languages.map((language) => (
               <button
                 key={language.code}
                 onClick={() => handleSelect(language)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-neubg/80 transition-colors",
-                  language.code === value && "bg-bridgit-primary/10",
+                  "w-full flex items-center gap-4 px-5 py-3 text-sm text-foreground transition-all duration-200",
+                  "hover:bg-gradient-to-r hover:from-bridgit-primary/10 hover:to-bridgit-secondary/10",
+                  "hover:border-l-2 hover:border-l-bridgit-primary",
+                  language.code === value &&
+                    "bg-bridgit-primary/20 border-l-2 border-l-bridgit-primary",
                 )}
               >
-                <span className="text-lg">{language.flag}</span>
-                <span className="font-medium">{language.code}</span>
-                <span className="text-muted-foreground">{language.name}</span>
+                <span className="text-xl">{language.flag}</span>
+                <span className="font-semibold tracking-wide">
+                  {language.code}
+                </span>
+                <span className="text-muted-foreground text-xs">
+                  {language.name}
+                </span>
               </button>
             ))}
           </div>
