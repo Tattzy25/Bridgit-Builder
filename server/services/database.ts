@@ -48,102 +48,35 @@ export class DatabaseService {
     }
   }
 
-  // Create bridgit_sessions table if it doesn't exist
+  // Create database tables matching exact specifications
   static async initializeDatabase() {
-    const createSessionsTable = `
-      CREATE TABLE IF NOT EXISTS bridgit_sessions (
-        session_id UUID PRIMARY KEY,
-        user_id VARCHAR(255) NOT NULL,
-        plan_id VARCHAR(255),
-        source_language VARCHAR(10) NOT NULL,
-        target_language VARCHAR(10) NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        
-        -- FSM State Timestamps
-        recording_start TIMESTAMP WITH TIME ZONE,
-        recording_end TIMESTAMP WITH TIME ZONE,
-        transcription_start TIMESTAMP WITH TIME ZONE,
-        transcription_end TIMESTAMP WITH TIME ZONE,
-        translation_start TIMESTAMP WITH TIME ZONE,
-        translation_end TIMESTAMP WITH TIME ZONE,
-        speaking_start TIMESTAMP WITH TIME ZONE,
-        speaking_end TIMESTAMP WITH TIME ZONE,
-        
-        -- Content
-        final_text TEXT,
-        translated_text TEXT,
-        
-        -- API Providers
-        stt_provider VARCHAR(50),
-        translation_provider VARCHAR(50),
-        tts_provider VARCHAR(50),
-        tts_voice VARCHAR(100),
-        
-        -- Usage Tracking
-        stt_tokens_used INTEGER DEFAULT 0,
-        stt_duration_seconds DECIMAL(10,3) DEFAULT 0,
-        tts_characters_used INTEGER DEFAULT 0,
-        total_tokens_billed INTEGER DEFAULT 0,
-        usage_billed BOOLEAN DEFAULT FALSE,
-        
-        -- Fallback Tracking
-        stt_fallback_used BOOLEAN DEFAULT FALSE,
-        translate_fallback_used BOOLEAN DEFAULT FALSE,
-        tts_fallback_used BOOLEAN DEFAULT FALSE,
-        
-        -- Meta
-        client_ip INET,
-        user_agent TEXT,
-        status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'complete', 'error')),
-        error_message TEXT,
-        
-        -- Indexes for performance
-        CONSTRAINT fk_user_sessions FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      );
-      
-      -- Create indexes for common queries
-      CREATE INDEX IF NOT EXISTS idx_bridgit_sessions_user_id ON bridgit_sessions(user_id);
-      CREATE INDEX IF NOT EXISTS idx_bridgit_sessions_created_at ON bridgit_sessions(created_at);
-      CREATE INDEX IF NOT EXISTS idx_bridgit_sessions_status ON bridgit_sessions(status);
-      CREATE INDEX IF NOT EXISTS idx_bridgit_sessions_usage_billed ON bridgit_sessions(usage_billed);
-      
-      -- Create updated_at trigger
+    // Create updated_at function first
+    const createUpdateFunction = `
       CREATE OR REPLACE FUNCTION update_updated_at_column()
       RETURNS TRIGGER AS $$
       BEGIN
-        NEW.updated_at = CURRENT_TIMESTAMP;
+        NEW.updated_at = NOW();
         RETURN NEW;
       END;
       $$ language 'plpgsql';
-      
-      DROP TRIGGER IF EXISTS update_bridgit_sessions_updated_at ON bridgit_sessions;
-      CREATE TRIGGER update_bridgit_sessions_updated_at
-        BEFORE UPDATE ON bridgit_sessions
-        FOR EACH ROW
-        EXECUTE FUNCTION update_updated_at_column();
     `;
 
     const createUsersTable = `
       CREATE TABLE IF NOT EXISTS users (
-        id VARCHAR(255) PRIMARY KEY, -- Clerk user ID
-        email VARCHAR(255) UNIQUE,
-        first_name VARCHAR(100),
-        last_name VARCHAR(100),
-        plan_id VARCHAR(100) DEFAULT 'basic',
-        default_source_language VARCHAR(10) DEFAULT 'EN',
-        default_target_language VARCHAR(10) DEFAULT 'FR',
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        last_login TIMESTAMP WITH TIME ZONE,
-        is_active BOOLEAN DEFAULT TRUE
+        id UUID PRIMARY KEY,
+        email VARCHAR UNIQUE NOT NULL,
+        hashed_password TEXT,
+        default_source_language VARCHAR,
+        default_target_language VARCHAR,
+        plan_id VARCHAR,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
       );
-      
+
       -- Create indexes
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
       CREATE INDEX IF NOT EXISTS idx_users_plan_id ON users(plan_id);
-      CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
-      
+
       -- Create updated_at trigger for users
       DROP TRIGGER IF EXISTS update_users_updated_at ON users;
       CREATE TRIGGER update_users_updated_at
@@ -152,7 +85,61 @@ export class DatabaseService {
         EXECUTE FUNCTION update_updated_at_column();
     `;
 
+    const createSessionsTable = `
+      CREATE TABLE IF NOT EXISTS bridgit_sessions (
+        session_id UUID PRIMARY KEY,
+        user_id UUID REFERENCES users(id),
+        plan_id VARCHAR,
+        source_language VARCHAR,
+        target_language VARCHAR,
+        tts_voice VARCHAR,
+        stt_provider VARCHAR,
+        stt_fallback_used BOOLEAN DEFAULT FALSE,
+        translate_fallback_used BOOLEAN DEFAULT FALSE,
+        tts_fallback_used BOOLEAN DEFAULT FALSE,
+        final_text TEXT,
+        translated_text TEXT,
+        translation_provider VARCHAR,
+        stt_tokens_used INTEGER,
+        stt_duration_seconds INTEGER,
+        tts_characters_used INTEGER,
+        total_tokens_billed INTEGER,
+        usage_billed BOOLEAN DEFAULT FALSE,
+        recording_start TIMESTAMP,
+        recording_end TIMESTAMP,
+        transcription_start TIMESTAMP,
+        transcription_end TIMESTAMP,
+        translation_start TIMESTAMP,
+        translation_end TIMESTAMP,
+        speaking_start TIMESTAMP,
+        speaking_end TIMESTAMP,
+        client_ip VARCHAR,
+        user_agent TEXT,
+        status VARCHAR DEFAULT 'complete',
+        error_message TEXT,
+        audio_url TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        deleted_at TIMESTAMP
+      );
+
+      -- Create indexes for performance
+      CREATE INDEX IF NOT EXISTS idx_bridgit_sessions_user_id ON bridgit_sessions(user_id);
+      CREATE INDEX IF NOT EXISTS idx_bridgit_sessions_created_at ON bridgit_sessions(created_at);
+      CREATE INDEX IF NOT EXISTS idx_bridgit_sessions_status ON bridgit_sessions(status);
+      CREATE INDEX IF NOT EXISTS idx_bridgit_sessions_usage_billed ON bridgit_sessions(usage_billed);
+
+      -- Create updated_at trigger
+      DROP TRIGGER IF EXISTS update_bridgit_sessions_updated_at ON bridgit_sessions;
+      CREATE TRIGGER update_bridgit_sessions_updated_at
+        BEFORE UPDATE ON bridgit_sessions
+        FOR EACH ROW
+        EXECUTE FUNCTION update_updated_at_column();
+    `;
+
     try {
+      await this.query(createUpdateFunction);
+      console.log("✅ Update function created/verified");
+
       await this.query(createUsersTable);
       console.log("✅ Users table created/verified");
 
@@ -197,7 +184,7 @@ export class DatabaseService {
       .join(", ");
 
     const query = `
-      UPDATE bridgit_sessions 
+      UPDATE bridgit_sessions
       SET ${updateQuery}
       WHERE session_id = $1
       RETURNING session_id
@@ -215,9 +202,9 @@ export class DatabaseService {
 
   static async getUserSessions(userId: string, limit = 50, offset = 0) {
     const query = `
-      SELECT * FROM bridgit_sessions 
-      WHERE user_id = $1 
-      ORDER BY created_at DESC 
+      SELECT * FROM bridgit_sessions
+      WHERE user_id = $1
+      ORDER BY created_at DESC
       LIMIT $2 OFFSET $3
     `;
     return await this.query(query, [userId, limit, offset]);
@@ -233,7 +220,7 @@ export class DatabaseService {
     const query = `
       INSERT INTO users (id, email, first_name, last_name, plan_id, last_login)
       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
-      ON CONFLICT (id) 
+      ON CONFLICT (id)
       DO UPDATE SET
         email = EXCLUDED.email,
         first_name = EXCLUDED.first_name,
@@ -262,15 +249,15 @@ export class DatabaseService {
   // Analytics queries
   static async getUserSessionStats(userId: string, days = 30) {
     const query = `
-      SELECT 
+      SELECT
         COUNT(*) as total_sessions,
         COUNT(CASE WHEN status = 'complete' THEN 1 END) as completed_sessions,
         COUNT(CASE WHEN status = 'error' THEN 1 END) as failed_sessions,
         SUM(stt_tokens_used) as total_stt_tokens,
         SUM(tts_characters_used) as total_tts_characters,
         AVG(EXTRACT(EPOCH FROM (speaking_end - recording_start))) as avg_session_duration
-      FROM bridgit_sessions 
-      WHERE user_id = $1 
+      FROM bridgit_sessions
+      WHERE user_id = $1
         AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
     `;
 
