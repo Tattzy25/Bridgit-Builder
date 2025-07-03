@@ -114,12 +114,74 @@ export default {
           "0%": { opacity: "0", transform: "translateY(20px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        "glow-pulse": {
+          "0%, 100%": {
+            boxShadow: "0 0 30px -10px hsl(var(--bridgit-primary) / 0.3)",
+          },
+          "50%": {
+            boxShadow: "0 0 60px -5px hsl(var(--bridgit-primary) / 0.6)",
+          },
+        },
+        "cyber-drift": {
+          "0%, 100%": {
+            transform: "rotate(0deg) scale(1)",
+          },
+          "33%": {
+            transform: "rotate(1deg) scale(1.02)",
+          },
+          "66%": {
+            transform: "rotate(-1deg) scale(0.98)",
+          },
+        },
+        "hologram-flicker": {
+          "0%, 100%": {
+            opacity: "1",
+            filter: "hue-rotate(0deg)",
+          },
+          "50%": {
+            opacity: "0.8",
+            filter: "hue-rotate(10deg)",
+          },
+        },
+        "neon-glow": {
+          "0%, 100%": {
+            textShadow: "0 0 10px hsl(var(--bridgit-primary))",
+          },
+          "50%": {
+            textShadow:
+              "0 0 20px hsl(var(--bridgit-primary)), 0 0 30px hsl(var(--bridgit-secondary))",
+          },
+        },
+        "slide-up": {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(40px) scale(0.95)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0) scale(1)",
+          },
+        },
+        float: {
+          "0%, 100%": {
+            transform: "translateY(0px)",
+          },
+          "50%": {
+            transform: "translateY(-10px)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         pulse: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "fade-in": "fade-in 0.5s ease-out",
+        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        "cyber-drift": "cyber-drift 20s ease-in-out infinite",
+        "hologram-flicker": "hologram-flicker 3s ease-in-out infinite",
+        "neon-glow": "neon-glow 2s ease-in-out infinite",
+        "slide-up": "slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+        float: "float 3s ease-in-out infinite",
       },
     },
   },
