@@ -188,7 +188,6 @@ export default function Index() {
               defaultToLang="FR"
               isActive={false}
               isRemoteSession={false}
-              isFlipped={false}
               userId="user1"
               className="mobile-flip-first" // Flip on mobile only
             />
