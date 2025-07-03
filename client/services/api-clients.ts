@@ -66,6 +66,10 @@ export class DeepLClient {
     sourceLang?: string,
   ): Promise<string> {
     try {
+      // Convert language codes to DeepL format
+      const targetCode = getDeepLCode(targetLang);
+      const sourceCode = sourceLang ? getDeepLCode(sourceLang) : undefined;
+
       const response = await fetch(`${this.baseUrl}/translate`, {
         method: "POST",
         headers: {
@@ -74,8 +78,8 @@ export class DeepLClient {
         },
         body: new URLSearchParams({
           text,
-          target_lang: targetLang.toUpperCase(),
-          ...(sourceLang && { source_lang: sourceLang.toUpperCase() }),
+          target_lang: targetCode,
+          ...(sourceCode && { source_lang: sourceCode }),
         }),
       });
 
@@ -134,7 +138,10 @@ export const VOICE_IDS = {
 
 // Language mappings for APIs
 export const LANGUAGE_MAPPINGS = {
-  // ISO 639-1 to service-specific codes
+// Import DeepL language mappings
+import { getDeepLCode } from "./deepl-languages";
+
+// ISO 639-1 to service-specific codes
   DEEPL: {
     EN: "EN-US",
     FR: "FR",
