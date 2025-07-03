@@ -6,6 +6,7 @@ import { ElevenLabsApi } from "@elevenlabs/elevenlabs-js";
 import Groq from "groq-sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { neon } from "@neondatabase/serverless";
+import { getDeepLCode } from "./deepl-languages";
 
 // Environment variables validation
 const requiredEnvVars = {
@@ -138,10 +139,7 @@ export const VOICE_IDS = {
 
 // Language mappings for APIs
 export const LANGUAGE_MAPPINGS = {
-// Import DeepL language mappings
-import { getDeepLCode } from "./deepl-languages";
-
-// ISO 639-1 to service-specific codes
+  // ISO 639-1 to service-specific codes
   DEEPL: {
     EN: "EN-US",
     FR: "FR",
