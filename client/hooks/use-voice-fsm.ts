@@ -1,4 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { sessionTracker } from "@/services/session-tracker";
+import { useAuth } from "./use-auth";
 
 export type VoiceState =
   | "IDLE"
@@ -20,13 +22,14 @@ export interface VoiceConfig {
   fromLang: string;
   toLang: string;
   isRemoteSession: boolean;
-  userId: string;
+  userId?: string; // Will be populated from auth
   onStateChange?: (state: VoiceState) => void;
   onDataChange?: (data: VoiceData) => void;
   onError?: (error: string) => void;
 }
 
 export function useVoiceFSM(config: VoiceConfig) {
+  const { user, isLoaded, isSignedIn } = useAuth();
   const [state, setState] = useState<VoiceState>("IDLE");
   const [data, setData] = useState<VoiceData>({
     partialText: "",
@@ -35,6 +38,9 @@ export function useVoiceFSM(config: VoiceConfig) {
     audioLevel: 0,
     isConnected: config.isRemoteSession,
   });
+
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isSessionActive, setIsSessionActive] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -51,14 +57,23 @@ export function useVoiceFSM(config: VoiceConfig) {
   const silenceStartRef = useRef<number | null>(null);
   const recordingStartRef = useRef<number | null>(null);
 
-  // State transition with callbacks
+  // State transition with database tracking
   const transitionTo = useCallback(
-    (newState: VoiceState) => {
+    async (newState: VoiceState) => {
       console.log(`FSM: ${state} → ${newState}`);
       setState(newState);
       config.onStateChange?.(newState);
+
+      // Track state change in database
+      if (isSessionActive) {
+        try {
+          await sessionTracker.updateFSMState(newState);
+        } catch (error) {
+          console.error("Failed to track FSM state:", error);
+        }
+      }
     },
-    [state, config],
+    [state, config, isSessionActive],
   );
 
   // Update data with callbacks
@@ -201,48 +216,125 @@ export function useVoiceFSM(config: VoiceConfig) {
   // Process recorded audio through STT → Translation → TTS pipeline
   const processAudio = useCallback(
     async (audioBlob: Blob) => {
+      const startTime = Date.now();
+
       try {
         // Step 1: Speech to Text (STT)
-        transitionTo("TRANSCRIBING");
+        await transitionTo("TRANSCRIBING");
         updateData({ partialText: "Processing audio..." });
 
-        // TODO: Replace with actual Gemini STT API call
-        const mockSTTResult = await mockSTT(audioBlob, config.fromLang);
+        const sttStartTime = Date.now();
+        let sttResult;
+        let sttProvider: "gemini" | "groq" = "gemini";
+        let sttFallback = false;
+
+        try {
+          // TODO: Replace with actual Gemini STT API call
+          sttResult = await mockSTT(audioBlob, config.fromLang);
+        } catch (error) {
+          console.log("Gemini STT failed, trying Groq fallback");
+          sttProvider = "groq";
+          sttFallback = true;
+          sttResult = await mockSTTFallback(audioBlob, config.fromLang);
+        }
+
+        const sttDuration = (Date.now() - sttStartTime) / 1000;
+        const sttTokens = Math.ceil(sttResult.finalText.length / 4); // Rough token estimate
+
+        // Track STT usage
+        await sessionTracker.trackSTTUsage(
+          sttProvider,
+          sttTokens,
+          sttDuration,
+          sttFallback,
+        );
+
         updateData({
-          finalText: mockSTTResult.finalText,
-          partialText: mockSTTResult.finalText,
+          finalText: sttResult.finalText,
+          partialText: sttResult.finalText,
         });
 
         // Step 2: Translation
-        transitionTo("TRANSLATING");
+        await transitionTo("TRANSLATING");
 
-        // TODO: Replace with actual DeepL API call
-        const translatedText = await mockTranslate(
-          mockSTTResult.finalText,
-          config.fromLang,
-          config.toLang,
+        let translatedText;
+        let translationProvider: "deepl" | "groq" = "deepl";
+        let translationFallback = false;
+
+        try {
+          // TODO: Replace with actual DeepL API call
+          translatedText = await mockTranslate(
+            sttResult.finalText,
+            config.fromLang,
+            config.toLang,
+          );
+        } catch (error) {
+          console.log("DeepL failed, trying Groq fallback");
+          translationProvider = "groq";
+          translationFallback = true;
+          translatedText = await mockTranslateFallback(
+            sttResult.finalText,
+            config.fromLang,
+            config.toLang,
+          );
+        }
+
+        // Track translation usage
+        await sessionTracker.trackTranslationUsage(
+          translationProvider,
+          translationFallback,
         );
+
+        // Store content in database
+        await sessionTracker.storeContent(sttResult.finalText, translatedText);
+
         updateData({ translatedText });
 
         // Step 3: Text to Speech (TTS) and Playback
-        transitionTo("SPEAKING");
+        await transitionTo("SPEAKING");
 
-        if (config.isRemoteSession) {
-          // TODO: Publish to Ably for remote users
-          await publishToAbly({
-            state: "SPEAKING",
-            translatedText,
-            fromUser: config.userId,
-            sessionCode: data.sessionCode,
-          });
-        } else {
-          // Local TTS playback
-          await playTTS(translatedText, config.toLang);
+        const ttsCharacters = translatedText.length;
+        let ttsProvider: "elevenlabs" | "browser" = "elevenlabs";
+        let ttsVoice = "default";
+        let ttsFallback = false;
+
+        try {
+          if (config.isRemoteSession) {
+            // TODO: Publish to Ably for remote users
+            await publishToAbly({
+              state: "SPEAKING",
+              translatedText,
+              fromUser: user?.id,
+              sessionCode: data.sessionCode,
+            });
+          } else {
+            // TODO: Replace with ElevenLabs TTS
+            try {
+              await playTTS(translatedText, config.toLang);
+            } catch (error) {
+              console.log("ElevenLabs failed, using browser fallback");
+              ttsProvider = "browser";
+              ttsFallback = true;
+              await playTTSFallback(translatedText, config.toLang);
+            }
+          }
+        } catch (error) {
+          ttsProvider = "browser";
+          ttsFallback = true;
+          await playTTSFallback(translatedText, config.toLang);
         }
 
+        // Track TTS usage
+        await sessionTracker.trackTTSUsage(
+          ttsProvider,
+          ttsVoice,
+          ttsCharacters,
+          ttsFallback,
+        );
+
         // Return to IDLE
-        setTimeout(() => {
-          transitionTo("IDLE");
+        setTimeout(async () => {
+          await transitionTo("IDLE");
           updateData({
             partialText: "",
             finalText: "",
@@ -251,21 +343,73 @@ export function useVoiceFSM(config: VoiceConfig) {
         }, 1000);
       } catch (error) {
         config.onError?.(`Processing error: ${error}`);
-        transitionTo("IDLE");
+
+        // Track error in session
+        if (isSessionActive) {
+          await sessionTracker.errorSession(`Processing error: ${error}`);
+          setIsSessionActive(false);
+          setSessionId(null);
+        }
+
+        await transitionTo("IDLE");
       }
     },
-    [config, data.sessionCode, transitionTo, updateData],
+    [config, data.sessionCode, transitionTo, updateData, user, isSessionActive],
   );
+
+  // Create new session when starting
+  const createSession = useCallback(async () => {
+    if (!user?.id) {
+      config.onError?.("User not authenticated");
+      return null;
+    }
+
+    try {
+      const newSessionId = await sessionTracker.createSession({
+        userId: user.id,
+        planId: user.planId,
+        sourceLanguage: config.fromLang,
+        targetLanguage: config.toLang,
+      });
+
+      setSessionId(newSessionId);
+      setIsSessionActive(true);
+      return newSessionId;
+    } catch (error) {
+      config.onError?.(`Failed to create session: ${error}`);
+      return null;
+    }
+  }, [user, config]);
 
   // Start/Stop microphone listening
   const toggleMicrophone = useCallback(async () => {
     if (!isListeningRef.current) {
+      // Check authentication
+      if (!isLoaded) {
+        config.onError?.("Authentication loading...");
+        return;
+      }
+
+      if (!isSignedIn || !user) {
+        config.onError?.("Please sign in to use voice translation");
+        return;
+      }
+
+      // Create new session
+      const newSessionId = await createSession();
+      if (!newSessionId) return;
+
       // Start listening
       const success = await initializeMicrophone();
       if (success) {
         isListeningRef.current = true;
         startVAD();
         updateData({ isConnected: true });
+      } else {
+        // Cleanup session if mic failed
+        await sessionTracker.errorSession("Microphone access denied");
+        setIsSessionActive(false);
+        setSessionId(null);
       }
     } else {
       // Stop listening
@@ -285,8 +429,25 @@ export function useVoiceFSM(config: VoiceConfig) {
 
       transitionTo("IDLE");
       updateData({ isConnected: false, audioLevel: 0 });
+
+      // Complete session
+      if (isSessionActive) {
+        await sessionTracker.completeSession();
+        setIsSessionActive(false);
+        setSessionId(null);
+      }
     }
-  }, [initializeMicrophone, startVAD, transitionTo, updateData]);
+  }, [
+    initializeMicrophone,
+    startVAD,
+    transitionTo,
+    updateData,
+    createSession,
+    isLoaded,
+    isSignedIn,
+    user,
+    isSessionActive,
+  ]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -297,14 +458,23 @@ export function useVoiceFSM(config: VoiceConfig) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
       if (audioContextRef.current) audioContextRef.current.close();
+
+      // End session if active
+      if (isSessionActive) {
+        sessionTracker.endSession();
+      }
     };
-  }, []);
+  }, [isSessionActive]);
 
   return {
     state,
     data,
     isListening: isListeningRef.current,
     toggleMicrophone,
+    sessionId,
+    isSessionActive,
+    user,
+    isAuthenticated: isSignedIn && !!user,
   };
 }
 
@@ -316,6 +486,16 @@ async function mockSTT(audioBlob: Blob, language: string) {
   return {
     finalText: `Hello, this is a test message in ${language}`,
     confidence: 0.95,
+  };
+}
+
+async function mockSTTFallback(audioBlob: Blob, language: string) {
+  // Simulate Groq STT fallback
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  return {
+    finalText: `[Groq STT] Hello, this is a test message in ${language}`,
+    confidence: 0.85,
   };
 }
 
@@ -333,9 +513,28 @@ async function mockTranslate(text: string, fromLang: string, toLang: string) {
   return translations[`${fromLang}→${toLang}`] || `Translated: ${text}`;
 }
 
+async function mockTranslateFallback(
+  text: string,
+  fromLang: string,
+  toLang: string,
+) {
+  // Simulate Groq translation fallback
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+
+  return `[Groq Translation] ${text} (translated from ${fromLang} to ${toLang})`;
+}
+
 async function playTTS(text: string, language: string) {
   // TODO: Replace with ElevenLabs TTS API
-  // For now, use browser SpeechSynthesis as fallback
+  // Simulate ElevenLabs API call
+  await new Promise((resolve) => setTimeout(resolve, 800));
+
+  // For now, use browser fallback
+  return playTTSFallback(text, language);
+}
+
+async function playTTSFallback(text: string, language: string) {
+  // Browser SpeechSynthesis fallback
   if ("speechSynthesis" in window) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang =
