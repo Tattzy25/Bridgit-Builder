@@ -88,19 +88,31 @@ export function VoiceCard({
         <button
           onClick={handleMicClick}
           className={cn(
-            "neu-microphone",
+            "neu-microphone relative",
             isListening && "shadow-neu-sm-inset",
             isActive && "animate-pulse",
           )}
         >
           <Mic
             className={cn(
-              "h-6 w-6",
+              "h-6 w-6 transition-colors duration-200",
               isListening ? "text-bridgit-primary" : "text-muted-foreground",
             )}
           />
+          {isListening && (
+            <div className="absolute inset-0 rounded-full bg-bridgit-primary/20 animate-ping" />
+          )}
         </button>
       </div>
+
+      {/* Status Text */}
+      {isListening && (
+        <div className="text-center">
+          <p className="text-xs text-bridgit-primary font-medium animate-pulse">
+            Listening...
+          </p>
+        </div>
+      )}
     </NeumorphicCard>
   );
 }

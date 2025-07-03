@@ -256,15 +256,18 @@ export function MainMenu({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <NeumorphicCard className="w-full max-w-sm max-h-[80vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+      <NeumorphicCard className="w-full max-w-sm max-h-[85vh] overflow-y-auto animate-fade-in">
         {activeTab === "main" && renderMainTab()}
         {activeTab === "settings" && renderSettingsTab()}
         {activeTab === "colors" && renderColorsTab()}
         {activeTab === "voice" && renderVoiceTab()}
 
         <div className="mt-6 pt-4 border-t border-border/20">
-          <NeumorphicButton onClick={onClose} className="w-full">
+          <NeumorphicButton
+            onClick={onClose}
+            className="w-full text-muted-foreground hover:text-foreground"
+          >
             Close
           </NeumorphicButton>
         </div>
