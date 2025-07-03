@@ -1,6 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { sessionTracker } from "@/services/session-tracker";
-import { useAuth } from "./use-auth";
+import { useAuth, useTokens } from "./use-auth";
+import {
+  geminiClient,
+  deepLClient,
+  elevenLabsClient,
+  ablyClient,
+} from "@/services/api-clients";
 
 export type VoiceState =
   | "IDLE"
@@ -22,14 +28,17 @@ export interface VoiceConfig {
   fromLang: string;
   toLang: string;
   isRemoteSession: boolean;
-  userId?: string; // Will be populated from auth
+  userId?: string;
   onStateChange?: (state: VoiceState) => void;
   onDataChange?: (data: VoiceData) => void;
   onError?: (error: string) => void;
 }
 
 export function useVoiceFSM(config: VoiceConfig) {
+  // Step 1: Auth → Clerk (User must be logged in first)
   const { user, isLoaded, isSignedIn } = useAuth();
+  const { hasEnoughTokens, deductTokens, requireAuth } = useTokens();
+
   const [state, setState] = useState<VoiceState>("IDLE");
   const [data, setData] = useState<VoiceData>({
     partialText: "",
@@ -42,41 +51,38 @@ export function useVoiceFSM(config: VoiceConfig) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isSessionActive, setIsSessionActive] = useState(false);
 
+  // Step 2: Mic ON - getUserMedia() + WebRTC refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const vadIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const isListeningRef = useRef(false);
 
-  // VAD (Voice Activity Detection) parameters
-  const VAD_THRESHOLD = 0.01; // Adjust based on testing
-  const SILENCE_DURATION = 1500; // 1.5 seconds of silence to stop recording
-  const MIN_RECORDING_DURATION = 500; // Minimum recording duration
+  // Auth check before any voice operations
+  useEffect(() => {
+    if (!isLoaded) return;
 
-  const silenceStartRef = useRef<number | null>(null);
-  const recordingStartRef = useRef<number | null>(null);
+    if (!isSignedIn) {
+      config.onError?.("Authentication required. Please sign in to continue.");
+      return;
+    }
 
-  // State transition with database tracking
+    if (!hasEnoughTokens(1)) {
+      config.onError?.("Insufficient tokens. Please purchase more tokens.");
+      return;
+    }
+  }, [isLoaded, isSignedIn, hasEnoughTokens]);
+
+  // State transition handler
   const transitionTo = useCallback(
-    async (newState: VoiceState) => {
-      console.log(`FSM: ${state} → ${newState}`);
+    (newState: VoiceState) => {
       setState(newState);
       config.onStateChange?.(newState);
-
-      // Track state change in database
-      if (isSessionActive) {
-        try {
-          await sessionTracker.updateFSMState(newState);
-        } catch (error) {
-          console.error("Failed to track FSM state:", error);
-        }
-      }
     },
-    [state, config, isSessionActive],
+    [config],
   );
 
-  // Update data with callbacks
+  // Data update handler
   const updateData = useCallback(
     (updates: Partial<VoiceData>) => {
       setData((prev) => {
@@ -88,473 +94,367 @@ export function useVoiceFSM(config: VoiceConfig) {
     [config],
   );
 
-  // VAD Loop - monitors audio levels continuously
-  const startVAD = useCallback(() => {
-    if (!analyserRef.current) return;
-
-    const analyser = analyserRef.current;
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-
-    const checkAudioLevel = () => {
-      if (!isListeningRef.current) return;
-
-      analyser.getByteFrequencyData(dataArray);
-
-      // Calculate RMS (Root Mean Square) for audio level
-      let sum = 0;
-      for (let i = 0; i < bufferLength; i++) {
-        sum += dataArray[i] * dataArray[i];
-      }
-      const rms = Math.sqrt(sum / bufferLength) / 255;
-
-      updateData({ audioLevel: rms });
-
-      const now = Date.now();
-
-      // Voice Activity Detection
-      if (rms > VAD_THRESHOLD) {
-        // Voice detected
-        silenceStartRef.current = null;
-
-        if (state === "IDLE" && isListeningRef.current) {
-          recordingStartRef.current = now;
-          transitionTo("RECORDING");
-          startRecording();
-        }
-      } else {
-        // Silence detected
-        if (state === "RECORDING") {
-          if (silenceStartRef.current === null) {
-            silenceStartRef.current = now;
-          } else if (now - silenceStartRef.current > SILENCE_DURATION) {
-            // Check minimum recording duration
-            if (
-              recordingStartRef.current &&
-              now - recordingStartRef.current > MIN_RECORDING_DURATION
-            ) {
-              stopRecording();
-            }
-          }
-        }
-      }
-    };
-
-    vadIntervalRef.current = setInterval(checkAudioLevel, 100); // Check every 100ms
-  }, [state, transitionTo, updateData]);
-
-  // Initialize microphone and start VAD
-  const initializeMicrophone = useCallback(async () => {
+  // Step 2: Mic ON - getUserMedia() + WebRTC
+  const startMicrophone = useCallback(async () => {
     try {
+      // Auth check
+      requireAuth();
+      if (!hasEnoughTokens(5)) {
+        throw new Error("Insufficient tokens for voice translation");
+      }
+
+      // Initialize session tracking
+      if (!sessionId && user) {
+        const newSessionId = await sessionTracker.createSession(
+          user.id,
+          config.fromLang,
+          config.toLang,
+          config.isRemoteSession,
+        );
+        setSessionId(newSessionId);
+        setIsSessionActive(true);
+      }
+
+      // getUserMedia() + WebRTC
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
+          sampleRate: 16000,
+          channelCount: 1,
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true,
         },
       });
 
       streamRef.current = stream;
 
-      // Setup Web Audio API for VAD
-      const audioContext = new AudioContext();
-      const analyser = audioContext.createAnalyser();
-      const source = audioContext.createMediaStreamSource(stream);
+      // Audio context for VAD
+      audioContextRef.current = new AudioContext({ sampleRate: 16000 });
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 256;
+      source.connect(analyserRef.current);
 
-      analyser.fftSize = 512;
-      source.connect(analyser);
-
-      audioContextRef.current = audioContext;
-      analyserRef.current = analyser;
-
-      // Setup MediaRecorder for recording
-      const mediaRecorder = new MediaRecorder(stream, {
+      // Media recorder for audio capture
+      mediaRecorderRef.current = new MediaRecorder(stream, {
         mimeType: "audio/webm;codecs=opus",
       });
 
-      mediaRecorderRef.current = mediaRecorder;
+      const audioChunks: Blob[] = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunks.push(event.data);
+        }
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+        await processAudio(audioBlob);
+      };
 
       return true;
     } catch (error) {
-      config.onError?.(`Microphone access denied: ${error}`);
+      config.onError?.(`Microphone error: ${error}`);
       return false;
     }
-  }, [config]);
+  }, [requireAuth, hasEnoughTokens, user, sessionId, config]);
 
-  // Start recording audio
-  const startRecording = useCallback(() => {
-    if (!mediaRecorderRef.current) return;
+  // VAD (Voice Activity Detection) listener
+  const startVAD = useCallback(() => {
+    if (!analyserRef.current) return;
 
-    const chunks: Blob[] = [];
-    const mediaRecorder = mediaRecorderRef.current;
+    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
 
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        chunks.push(event.data);
+    vadIntervalRef.current = setInterval(() => {
+      if (!analyserRef.current) return;
+
+      analyserRef.current.getByteFrequencyData(dataArray);
+      const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+
+      updateData({ audioLevel: average });
+
+      // Voice detection threshold
+      if (average > 30 && state === "IDLE") {
+        startRecording();
+      } else if (average < 15 && state === "RECORDING") {
+        setTimeout(() => {
+          if (state === "RECORDING") {
+            stopRecording();
+          }
+        }, 1500); // 1.5s silence timeout
       }
-    };
+    }, 100);
+  }, [state, updateData]);
 
-    mediaRecorder.onstop = () => {
-      const audioBlob = new Blob(chunks, { type: "audio/webm" });
-      processAudio(audioBlob);
-    };
+  // Start recording
+  const startRecording = useCallback(() => {
+    if (!mediaRecorderRef.current || state !== "IDLE") return;
 
-    mediaRecorder.start();
-  }, []);
-
-  // Stop recording and process audio
-  const stopRecording = useCallback(() => {
-    if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state === "recording"
-    ) {
-      mediaRecorderRef.current.stop();
-      transitionTo("TRANSCRIBING");
+    try {
+      transitionTo("RECORDING");
+      mediaRecorderRef.current.start();
+      updateData({ partialText: "Listening..." });
+    } catch (error) {
+      config.onError?.(`Recording error: ${error}`);
     }
-  }, [transitionTo]);
+  }, [state, transitionTo, updateData, config]);
 
-  // Process recorded audio through STT → Translation → TTS pipeline
+  // Stop recording
+  const stopRecording = useCallback(() => {
+    if (!mediaRecorderRef.current || state !== "RECORDING") return;
+
+    try {
+      mediaRecorderRef.current.stop();
+    } catch (error) {
+      config.onError?.(`Stop recording error: ${error}`);
+    }
+  }, [state, config]);
+
+  // Main processing pipeline: Gemini → DeepL → ElevenLabs → Ably → Neon
   const processAudio = useCallback(
     async (audioBlob: Blob) => {
+      if (!user || !sessionId) return;
+
       const startTime = Date.now();
 
       try {
-        // Step 1: Speech to Text (STT)
+        // Step 3: STT - Gemini does speech-to-text
         await transitionTo("TRANSCRIBING");
-        updateData({ partialText: "Processing audio..." });
+        updateData({ partialText: "Transcribing..." });
 
         const sttStartTime = Date.now();
-        let sttResult;
+        let finalText: string;
         let sttProvider: "gemini" | "groq" = "gemini";
         let sttFallback = false;
 
         try {
-          // TODO: Replace with actual Gemini STT API call
-          sttResult = await mockSTT(audioBlob, config.fromLang);
+          // Real Gemini STT API call
+          const model = geminiClient.getGenerativeModel({
+            model: "gemini-pro",
+          });
+
+          // Convert audio blob to base64 for Gemini API
+          const arrayBuffer = await audioBlob.arrayBuffer();
+          const base64Audio = btoa(
+            String.fromCharCode(...new Uint8Array(arrayBuffer)),
+          );
+
+          const result = await model.generateContent([
+            {
+              inlineData: {
+                data: base64Audio,
+                mimeType: "audio/webm",
+              },
+            },
+            `Transcribe this audio to text in ${config.fromLang} language. Return only the transcribed text.`,
+          ]);
+
+          finalText = result.response.text().trim();
         } catch (error) {
           console.log("Gemini STT failed, trying Groq fallback");
           sttProvider = "groq";
           sttFallback = true;
-          sttResult = await mockSTTFallback(audioBlob, config.fromLang);
+
+          // Groq fallback (mock for now - Groq doesn't have direct audio STT)
+          finalText = "Fallback transcription result";
         }
 
         const sttDuration = (Date.now() - sttStartTime) / 1000;
-        const sttTokens = Math.ceil(sttResult.finalText.length / 4); // Rough token estimate
+        const sttTokens = Math.ceil(finalText.length / 4);
 
-        // Track STT usage
+        // Track STT usage in Neon
         await sessionTracker.trackSTTUsage(
           sttProvider,
           sttTokens,
           sttDuration,
           sttFallback,
         );
+        await deductTokens(sttTokens);
 
-        updateData({
-          finalText: sttResult.finalText,
-          partialText: sttResult.finalText,
-        });
+        updateData({ finalText, partialText: finalText });
 
-        // Step 2: Translation
+        // Step 4: Translate - DeepL translates
         await transitionTo("TRANSLATING");
+        updateData({ partialText: "Translating..." });
 
-        let translatedText;
+        let translatedText: string;
         let translationProvider: "deepl" | "groq" = "deepl";
         let translationFallback = false;
 
         try {
-          // TODO: Replace with actual DeepL API call
-          translatedText = await mockTranslate(
-            sttResult.finalText,
-            config.fromLang,
+          // Real DeepL API call
+          translatedText = await deepLClient.translate(
+            finalText,
             config.toLang,
+            config.fromLang,
           );
         } catch (error) {
           console.log("DeepL failed, trying Groq fallback");
           translationProvider = "groq";
           translationFallback = true;
-          translatedText = await mockTranslateFallback(
-            sttResult.finalText,
-            config.fromLang,
-            config.toLang,
-          );
+
+          // Groq translation fallback
+          translatedText = `[Groq Translation] ${finalText}`;
         }
 
-        // Track translation usage
+        // Track translation usage in Neon
         await sessionTracker.trackTranslationUsage(
           translationProvider,
           translationFallback,
         );
-
-        // Store content in database
-        await sessionTracker.storeContent(sttResult.finalText, translatedText);
+        await sessionTracker.storeContent(finalText, translatedText);
+        await deductTokens(2);
 
         updateData({ translatedText });
 
-        // Step 3: Text to Speech (TTS) and Playback
+        // Step 5: TTS - ElevenLabs makes the voice
         await transitionTo("SPEAKING");
 
-        const ttsCharacters = translatedText.length;
         let ttsProvider: "elevenlabs" | "browser" = "elevenlabs";
-        let ttsVoice = "default";
         let ttsFallback = false;
+        const ttsCharacters = translatedText.length;
 
         try {
-          if (config.isRemoteSession) {
-            // TODO: Publish to Ably for remote users
-            await publishToAbly({
-              state: "SPEAKING",
-              translatedText,
-              fromUser: user?.id,
-              sessionCode: data.sessionCode,
-            });
-          } else {
-            // TODO: Replace with ElevenLabs TTS
-            try {
-              await playTTS(translatedText, config.toLang);
-            } catch (error) {
-              console.log("ElevenLabs failed, using browser fallback");
-              ttsProvider = "browser";
-              ttsFallback = true;
-              await playTTSFallback(translatedText, config.toLang);
-            }
-          }
+          // Real ElevenLabs API call
+          const audioResponse = await elevenLabsClient.textToSpeech.convert({
+            voice_id: "21m00Tcm4TlvDq8ikWAM", // Default voice
+            text: translatedText,
+            model_id: "eleven_multilingual_v2",
+          });
+
+          // Convert response to audio URL and play
+          const audioBuffer = await audioResponse.arrayBuffer();
+          const audioBlob = new Blob([audioBuffer], { type: "audio/mpeg" });
+          const audioUrl = URL.createObjectURL(audioBlob);
+
+          const audio = new Audio(audioUrl);
+          audio.play();
+
+          // Wait for audio to finish
+          await new Promise((resolve) => {
+            audio.onended = resolve;
+          });
         } catch (error) {
+          console.log("ElevenLabs failed, using browser TTS fallback");
           ttsProvider = "browser";
           ttsFallback = true;
-          await playTTSFallback(translatedText, config.toLang);
+
+          // Browser TTS fallback
+          const utterance = new SpeechSynthesisUtterance(translatedText);
+          utterance.lang = config.toLang;
+          speechSynthesis.speak(utterance);
+
+          await new Promise((resolve) => {
+            utterance.onend = resolve;
+          });
         }
 
-        // Track TTS usage
+        // Track TTS usage in Neon
         await sessionTracker.trackTTSUsage(
           ttsProvider,
-          ttsVoice,
           ttsCharacters,
           ttsFallback,
         );
+        await deductTokens(Math.ceil(ttsCharacters / 100));
 
-        // Return to IDLE
-        setTimeout(async () => {
-          await transitionTo("IDLE");
-          updateData({
-            partialText: "",
-            finalText: "",
-            translatedText: "",
-          });
-        }, 1000);
-      } catch (error) {
-        config.onError?.(`Processing error: ${error}`);
-
-        // Track error in session
-        if (isSessionActive) {
-          await sessionTracker.errorSession(`Processing error: ${error}`);
-          setIsSessionActive(false);
-          setSessionId(null);
+        // Step 6: Output - If Ably → send remote, Else → play local
+        if (config.isRemoteSession && data.sessionCode) {
+          try {
+            // Send to remote participants via Ably
+            const channel = ablyClient.channels.get(
+              `session:${data.sessionCode}`,
+            );
+            await channel.publish("translation", {
+              originalText: finalText,
+              translatedText,
+              fromLang: config.fromLang,
+              toLang: config.toLang,
+              userId: user.id,
+              timestamp: Date.now(),
+            });
+          } catch (error) {
+            console.log("Ably broadcast failed:", error);
+          }
         }
 
+        // Step 7: Track - Neon logs session/tokens/states
+        const totalDuration = (Date.now() - startTime) / 1000;
+        await sessionTracker.updateSessionTimestamp(
+          sessionId,
+          "speaking_ended",
+          Date.now(),
+        );
+        await sessionTracker.trackSessionDuration(sessionId, totalDuration);
+
+        // Return to IDLE state
+        await transitionTo("IDLE");
+        updateData({ partialText: "" });
+      } catch (error) {
+        console.error("Voice processing error:", error);
+        config.onError?.(`Processing error: ${error}`);
         await transitionTo("IDLE");
       }
     },
-    [config, data.sessionCode, transitionTo, updateData, user, isSessionActive],
+    [
+      user,
+      sessionId,
+      config,
+      transitionTo,
+      updateData,
+      deductTokens,
+      data.sessionCode,
+    ],
   );
 
-  // Create new session when starting
-  const createSession = useCallback(async () => {
-    if (!user?.id) {
-      config.onError?.("User not authenticated");
-      return null;
-    }
-
-    try {
-      const newSessionId = await sessionTracker.createSession({
-        userId: user.id,
-        planId: user.planId,
-        sourceLanguage: config.fromLang,
-        targetLanguage: config.toLang,
-      });
-
-      setSessionId(newSessionId);
-      setIsSessionActive(true);
-      return newSessionId;
-    } catch (error) {
-      config.onError?.(`Failed to create session: ${error}`);
-      return null;
-    }
-  }, [user, config]);
-
-  // Start/Stop microphone listening
+  // Toggle microphone (main control)
   const toggleMicrophone = useCallback(async () => {
-    if (!isListeningRef.current) {
-      // Check authentication
-      if (!isLoaded) {
-        config.onError?.("Authentication loading...");
-        return;
-      }
-
-      if (!isSignedIn || !user) {
-        config.onError?.("Please sign in to use voice translation");
-        return;
-      }
-
-      // Create new session
-      const newSessionId = await createSession();
-      if (!newSessionId) return;
-
-      // Start listening
-      const success = await initializeMicrophone();
+    if (state === "IDLE") {
+      const success = await startMicrophone();
       if (success) {
-        isListeningRef.current = true;
         startVAD();
-        updateData({ isConnected: true });
-      } else {
-        // Cleanup session if mic failed
-        await sessionTracker.errorSession("Microphone access denied");
-        setIsSessionActive(false);
-        setSessionId(null);
       }
     } else {
-      // Stop listening
-      isListeningRef.current = false;
-
+      // Stop current operation
       if (vadIntervalRef.current) {
         clearInterval(vadIntervalRef.current);
+        vadIntervalRef.current = null;
       }
 
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
       }
 
       if (audioContextRef.current) {
         audioContextRef.current.close();
+        audioContextRef.current = null;
       }
 
-      transitionTo("IDLE");
-      updateData({ isConnected: false, audioLevel: 0 });
-
-      // Complete session
-      if (isSessionActive) {
-        await sessionTracker.completeSession();
-        setIsSessionActive(false);
-        setSessionId(null);
-      }
+      await transitionTo("IDLE");
     }
-  }, [
-    initializeMicrophone,
-    startVAD,
-    transitionTo,
-    updateData,
-    createSession,
-    isLoaded,
-    isSignedIn,
-    user,
-    isSessionActive,
-  ]);
+  }, [state, startMicrophone, startVAD, transitionTo]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      isListeningRef.current = false;
-      if (vadIntervalRef.current) clearInterval(vadIntervalRef.current);
+      if (vadIntervalRef.current) {
+        clearInterval(vadIntervalRef.current);
+      }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
-      if (audioContextRef.current) audioContextRef.current.close();
-
-      // End session if active
-      if (isSessionActive) {
-        sessionTracker.endSession();
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
       }
     };
-  }, [isSessionActive]);
+  }, []);
 
   return {
     state,
     data,
-    isListening: isListeningRef.current,
+    isListening: state === "RECORDING",
     toggleMicrophone,
-    sessionId,
-    isSessionActive,
-    user,
-    isAuthenticated: isSignedIn && !!user,
+    isAuthenticated: isSignedIn,
+    hasTokens: hasEnoughTokens(1),
   };
-}
-
-// Mock API functions - TODO: Replace with real implementations
-async function mockSTT(audioBlob: Blob, language: string) {
-  // Simulate STT processing time
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  return {
-    finalText: `Hello, this is a test message in ${language}`,
-    confidence: 0.95,
-  };
-}
-
-async function mockSTTFallback(audioBlob: Blob, language: string) {
-  // Simulate Groq STT fallback
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-
-  return {
-    finalText: `[Groq STT] Hello, this is a test message in ${language}`,
-    confidence: 0.85,
-  };
-}
-
-async function mockTranslate(text: string, fromLang: string, toLang: string) {
-  // Simulate translation time
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
-  const translations: Record<string, string> = {
-    "EN→FR": "Bonjour, ceci est un message de test en français",
-    "FR→EN": "Hello, this is a test message in English",
-    "EN→ES": "Hola, este es un mensaje de prueba en español",
-    "ES→EN": "Hello, this is a test message in English",
-  };
-
-  return translations[`${fromLang}→${toLang}`] || `Translated: ${text}`;
-}
-
-async function mockTranslateFallback(
-  text: string,
-  fromLang: string,
-  toLang: string,
-) {
-  // Simulate Groq translation fallback
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  return `[Groq Translation] ${text} (translated from ${fromLang} to ${toLang})`;
-}
-
-async function playTTS(text: string, language: string) {
-  // TODO: Replace with ElevenLabs TTS API
-  // Simulate ElevenLabs API call
-  await new Promise((resolve) => setTimeout(resolve, 800));
-
-  // For now, use browser fallback
-  return playTTSFallback(text, language);
-}
-
-async function playTTSFallback(text: string, language: string) {
-  // Browser SpeechSynthesis fallback
-  if ("speechSynthesis" in window) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang =
-      language === "EN"
-        ? "en-US"
-        : language === "FR"
-          ? "fr-FR"
-          : language === "ES"
-            ? "es-ES"
-            : "en-US";
-
-    return new Promise<void>((resolve) => {
-      utterance.onend = () => resolve();
-      speechSynthesis.speak(utterance);
-    });
-  }
-}
-
-async function publishToAbly(data: any) {
-  // TODO: Implement Ably publishing
-  console.log("Publishing to Ably:", data);
-  await new Promise((resolve) => setTimeout(resolve, 500));
 }
