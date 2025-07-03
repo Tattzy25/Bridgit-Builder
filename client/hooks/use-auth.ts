@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import { useAuth as useClerkAuth, useUser } from "@clerk/clerk-react";
 
-// Mock Clerk auth - TODO: Replace with actual Clerk integration
+// Step 1: Auth → Clerk (User must be logged in first)
 interface User {
   id: string;
-  email?: string;
+  email: string;
+  plan: "free" | "basic" | "pro" | "enterprise";
+  tokens: number;
+  name?: string;
   firstName?: string;
   lastName?: string;
   planId?: string;
@@ -13,71 +16,86 @@ interface AuthState {
   user: User | null;
   isLoaded: boolean;
   isSignedIn: boolean;
+  tokens: number;
+  plan: string;
 }
 
 export function useAuth(): AuthState {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    isLoaded: false,
-    isSignedIn: false,
-  });
-
-  useEffect(() => {
-    // Mock authentication - TODO: Replace with Clerk's useAuth
-    const loadAuth = async () => {
-      try {
-        // Simulate loading delay
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Mock user data - TODO: Get from Clerk
-        const mockUser: User = {
-          id: "user_123456789", // This would come from Clerk
-          email: "user@example.com",
-          firstName: "John",
-          lastName: "Doe",
-          planId: "plan_basic", // Get from users table
-        };
-
-        setAuthState({
-          user: mockUser,
-          isLoaded: true,
-          isSignedIn: true,
-        });
-      } catch (error) {
-        console.error("Auth loading error:", error);
-        setAuthState({
-          user: null,
-          isLoaded: true,
-          isSignedIn: false,
-        });
-      }
-    };
-
-    loadAuth();
-  }, []);
-
-  return authState;
-}
-
-// TODO: Replace with actual Clerk auth implementation
-// Uncomment and use this when Clerk is integrated:
-/*
-import { useAuth as useClerkAuth, useUser } from '@clerk/nextjs';
-
-export function useAuth() {
-  const { isLoaded, isSignedIn } = useClerkAuth();
+  const { isLoaded, isSignedIn, userId } = useClerkAuth();
   const { user } = useUser();
 
+  // Step 1: Auth → Clerk (User must be logged in first)
+  if (!isLoaded) {
+    return {
+      user: null,
+      isLoaded: false,
+      isSignedIn: false,
+      tokens: 0,
+      plan: "free",
+    };
+  }
+
+  if (!isSignedIn || !user) {
+    return {
+      user: null,
+      isLoaded: true,
+      isSignedIn: false,
+      tokens: 0,
+      plan: "free",
+    };
+  }
+
+  // Clerk checks: user ID, plan, tokens
+  const clerkUser: User = {
+    id: user.id,
+    email: user.emailAddresses[0]?.emailAddress || "",
+    plan: (user.publicMetadata?.plan as any) || "free",
+    tokens: (user.publicMetadata?.tokens as number) || 50,
+    name: user.fullName || undefined,
+    firstName: user.firstName || undefined,
+    lastName: user.lastName || undefined,
+    planId: (user.publicMetadata?.planId as string) || "plan_free",
+  };
+
   return {
-    user: user ? {
-      id: user.id,
-      email: user.primaryEmailAddress?.emailAddress,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      planId: user.publicMetadata.planId as string
-    } : null,
-    isLoaded,
-    isSignedIn: !!isSignedIn
+    user: clerkUser,
+    isLoaded: true,
+    isSignedIn: true,
+    tokens: clerkUser.tokens,
+    plan: clerkUser.plan,
   };
 }
-*/
+
+// Token management with real Clerk integration
+export function useTokens() {
+  const { tokens, user, isSignedIn } = useAuth();
+
+  const deductTokens = async (amount: number) => {
+    if (!isSignedIn || !user) {
+      throw new Error("Must be authenticated to use tokens");
+    }
+
+    // TODO: Update user metadata in Clerk and Neon DB
+    console.log(`Deducting ${amount} tokens for user ${user.id}`);
+
+    // This would update Clerk user metadata:
+    // await user.update({
+    //   publicMetadata: {
+    //     ...user.publicMetadata,
+    //     tokens: tokens - amount
+    //   }
+    // });
+  };
+
+  const hasEnoughTokens = (required: number) => {
+    return isSignedIn && tokens >= required;
+  };
+
+  const requireAuth = () => {
+    if (!isSignedIn) {
+      throw new Error("Authentication required. Please sign in to continue.");
+    }
+  };
+
+  return { tokens, deductTokens, hasEnoughTokens, requireAuth };
+}
