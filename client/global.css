@@ -4,48 +4,55 @@
 
 @layer base {
   /**
-   * Bridgit AI Neumorphic Design System
-   * Customizable color scheme with neumorphic shadows
+   * Bridgit AI Futuristic Luxury Design System
+   * High-impact, premium dark theme with cyber elements
    */
   :root {
-    /* Neumorphic colors - customizable */
-    --neubg: 220 20% 94%;
-    --neushadow: 220 14% 85%;
-    --neulight: 220 24% 98%;
+    /* Futuristic dark luxury colors */
+    --neubg: 240 15% 8%;
+    --neushadow: 240 20% 4%;
+    --neulight: 240 15% 12%;
 
-    /* Bridgit AI brand colors - customizable */
-    --bridgit-primary: 280 100% 50%;
-    --bridgit-secondary: 200 100% 50%;
-    --bridgit-accent: 320 100% 50%;
+    /* Premium brand gradient colors */
+    --bridgit-primary: 270 100% 70%;
+    --bridgit-secondary: 195 100% 60%;
+    --bridgit-accent: 320 100% 65%;
+    --bridgit-gold: 45 100% 65%;
+    --bridgit-neon: 150 100% 50%;
 
-    /* Original shadcn theme */
-    --background: 220 20% 94%;
-    --foreground: 222.2 84% 4.9%;
+    /* Glass morphism */
+    --glass-bg: 240 15% 8% / 0.7;
+    --glass-border: 240 30% 25% / 0.3;
+    --glass-blur: blur(20px);
 
-    --card: 220 20% 94%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Futuristic luxury theme */
+    --background: 240 15% 8%;
+    --foreground: 240 10% 95%;
 
-    --popover: 220 20% 94%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --card: 240 15% 10%;
+    --card-foreground: 240 10% 95%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --popover: 240 15% 8%;
+    --popover-foreground: 240 10% 95%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --primary: 270 100% 70%;
+    --primary-foreground: 240 15% 8%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --secondary: 240 15% 15%;
+    --secondary-foreground: 240 10% 85%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --muted: 240 15% 15%;
+    --muted-foreground: 240 5% 65%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --accent: 320 100% 65%;
+    --accent-foreground: 240 15% 8%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 240 10% 95%;
+
+    --border: 240 30% 25%;
+    --input: 240 15% 12%;
+    --ring: 270 100% 70%;
 
     --radius: 0.5rem;
 
@@ -120,35 +127,182 @@
 }
 
 @layer components {
+  /* Futuristic Glass Cards */
   .neu-card {
-    @apply bg-neubg rounded-neu shadow-neu;
+    @apply bg-neubg/70 backdrop-blur-xl rounded-neu border border-white/10 relative overflow-hidden;
+    background: linear-gradient(
+      145deg,
+      hsl(var(--neubg)) 0%,
+      hsl(var(--neulight)) 100%
+    );
+    box-shadow:
+      0 25px 50px -12px hsl(var(--neushadow)),
+      inset 0 1px 0 hsl(var(--neulight) / 0.1),
+      0 0 60px -15px hsl(var(--bridgit-primary) / 0.3);
+  }
+
+  .neu-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--bridgit-primary) / 0.5) 50%,
+      transparent
+    );
   }
 
   .neu-card-inset {
-    @apply bg-neubg rounded-neu shadow-neu-inset;
+    @apply bg-neubg/50 rounded-neu border border-white/5 relative;
+    background: linear-gradient(
+      145deg,
+      hsl(var(--neushadow)) 0%,
+      hsl(var(--neubg)) 100%
+    );
+    box-shadow:
+      inset 0 2px 15px -3px hsl(var(--neushadow)),
+      inset 0 -2px 15px -3px hsl(var(--neulight) / 0.1);
   }
 
+  /* Premium Buttons */
   .neu-button {
-    @apply bg-neubg rounded-neu shadow-neu transition-all duration-200 ease-out;
+    @apply relative bg-gradient-to-br from-neulight to-neubg rounded-neu border border-white/10 transition-all duration-300 ease-out overflow-hidden;
+    box-shadow:
+      0 10px 25px -5px hsl(var(--neushadow)),
+      inset 0 1px 0 hsl(var(--neulight) / 0.2),
+      0 0 30px -10px hsl(var(--bridgit-primary) / 0.2);
+  }
+
+  .neu-button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--bridgit-primary) / 0.1) 50%,
+      transparent
+    );
+    transition: left 0.5s ease;
+  }
+
+  .neu-button:hover::before {
+    left: 100%;
   }
 
   .neu-button:hover {
-    @apply shadow-neu-sm;
+    transform: translateY(-2px);
+    box-shadow:
+      0 20px 40px -8px hsl(var(--neushadow)),
+      inset 0 1px 0 hsl(var(--neulight) / 0.3),
+      0 0 50px -10px hsl(var(--bridgit-primary) / 0.4);
   }
 
   .neu-button:active {
-    @apply shadow-neu-inset;
+    transform: translateY(0px);
+    box-shadow:
+      0 5px 15px -3px hsl(var(--neushadow)),
+      inset 0 2px 10px -2px hsl(var(--neushadow));
   }
 
+  /* Holographic Input */
   .neu-input {
-    @apply bg-neubg rounded-neu shadow-neu-inset px-6 py-4 text-foreground placeholder:text-muted-foreground border-0 focus:outline-none focus:ring-0;
+    @apply bg-neubg/30 backdrop-blur-md rounded-neu border border-white/10 px-6 py-4 text-foreground placeholder:text-muted-foreground/60 transition-all duration-300 relative overflow-hidden;
+    box-shadow:
+      inset 0 2px 10px -2px hsl(var(--neushadow)),
+      0 0 30px -10px hsl(var(--bridgit-secondary) / 0.2);
   }
 
+  .neu-input:focus {
+    outline: none;
+    border-color: hsl(var(--bridgit-primary) / 0.5);
+    box-shadow:
+      inset 0 2px 10px -2px hsl(var(--neushadow)),
+      0 0 40px -5px hsl(var(--bridgit-primary) / 0.4),
+      0 0 0 1px hsl(var(--bridgit-primary) / 0.3);
+  }
+
+  /* Cyberpunk Microphone */
   .neu-microphone {
-    @apply neu-button w-16 h-16 flex items-center justify-center cursor-pointer select-none;
+    @apply neu-button w-20 h-20 flex items-center justify-center cursor-pointer select-none relative;
+    background: linear-gradient(
+      145deg,
+      hsl(var(--bridgit-primary) / 0.2),
+      hsl(var(--bridgit-secondary) / 0.2)
+    );
+  }
+
+  .neu-microphone::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: inherit;
+    background: linear-gradient(
+      145deg,
+      hsl(var(--neubg)),
+      hsl(var(--neulight))
+    );
+    z-index: -1;
+  }
+
+  .neu-microphone:hover {
+    animation: glow-pulse 2s ease-in-out infinite;
   }
 
   .neu-microphone:active {
-    @apply shadow-neu-sm-inset;
+    transform: scale(0.95);
+    box-shadow:
+      inset 0 5px 20px -5px hsl(var(--bridgit-primary) / 0.5),
+      0 0 50px -10px hsl(var(--bridgit-primary) / 0.6);
+  }
+
+  /* Premium Language Selector */
+  .language-selector {
+    @apply neu-button;
+    background: linear-gradient(
+      145deg,
+      hsl(var(--bridgit-gold) / 0.1),
+      hsl(var(--neubg)) 70%
+    );
+  }
+
+  /* Animated Background */
+  .cyber-bg {
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(
+        circle at 20% 80%,
+        hsl(var(--bridgit-primary) / 0.1) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 80% 20%,
+        hsl(var(--bridgit-secondary) / 0.1) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 40% 40%,
+        hsl(var(--bridgit-accent) / 0.05) 0%,
+        transparent 50%
+      );
+    animation: cyber-drift 20s ease-in-out infinite;
+  }
+
+  /* Status Premium Styling */
+  .status-premium {
+    @apply neu-button relative overflow-hidden;
+    background: linear-gradient(
+      90deg,
+      hsl(var(--bridgit-neon) / 0.2),
+      hsl(var(--bridgit-gold) / 0.2)
+    );
   }
 }
