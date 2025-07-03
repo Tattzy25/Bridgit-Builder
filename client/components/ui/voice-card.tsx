@@ -3,6 +3,7 @@ import { NeumorphicCard } from "./neumorphic-card";
 import { LanguageSelector } from "./language-selector";
 import { Mic, ArrowLeftRight } from "lucide-react";
 import { useState } from "react";
+import { type DeepLLanguage } from "@/services/deepl-languages";
 
 interface VoiceCardProps {
   className?: string;
