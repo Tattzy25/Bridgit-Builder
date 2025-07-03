@@ -1,15 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { VoiceCard } from "@/components/ui/voice-card";
 import { MainMenu } from "@/components/ui/main-menu";
 import { StatusIndicator } from "@/components/ui/status-indicator";
+import { WelcomeScreen } from "@/components/ui/welcome-screen";
 import { cn } from "@/lib/utils";
 
 export default function Index() {
   const [mode, setMode] = useState<"just-me" | "talk-together">("just-me");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
   const [status, setStatus] = useState<
     "disconnected" | "connecting" | "connected" | "speaking" | "translating"
   >("disconnected");
+
+  useEffect(() => {
+    // Check if user has seen welcome screen before
+    const hasSeenWelcome = localStorage.getItem("bridgit-welcome-seen");
+    if (hasSeenWelcome) {
+      setShowWelcome(false);
+    }
+  }, []);
+
+  const handleWelcomeModeSelect = (
+    selectedMode: "just-me" | "talk-together",
+  ) => {
+    setMode(selectedMode);
+    setShowWelcome(false);
+    localStorage.setItem("bridgit-welcome-seen", "true");
+  };
+
+  const handleWelcomeClose = () => {
+    setShowWelcome(false);
+    localStorage.setItem("bridgit-welcome-seen", "true");
+  };
 
   const handleModeChange = (newMode: "just-me" | "talk-together") => {
     setMode(newMode);
@@ -98,6 +121,13 @@ export default function Index() {
   return (
     <>
       {mode === "just-me" ? renderJustMeMode() : renderTalkTogetherMode()}
+
+      {showWelcome && (
+        <WelcomeScreen
+          onModeSelect={handleWelcomeModeSelect}
+          onClose={handleWelcomeClose}
+        />
+      )}
 
       <MainMenu
         isOpen={isMenuOpen}
