@@ -1,7 +1,7 @@
 // API Client Services for Bridgit AI
 import Ably from "ably";
 import Spaces from "@ably/spaces";
-import { Chat } from "@ably/chat";
+import { ChatClient } from "@ably/chat";
 import { ElevenLabsApi } from "@elevenlabs/elevenlabs-js";
 import Groq from "groq-sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -34,7 +34,7 @@ export const ablyClient = new Ably.Realtime({
 export const ablySpaces = new Spaces(ablyClient);
 
 // Ably Chat SDK for messaging
-export const ablyChat = new Chat(ablyClient);
+export const ablyChat = new ChatClient(ablyClient);
 
 // ElevenLabs TTS SDK
 export const elevenLabsClient = new ElevenLabsApi({
