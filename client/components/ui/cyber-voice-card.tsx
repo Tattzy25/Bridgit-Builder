@@ -6,6 +6,7 @@ import { VoiceVisualizer } from "./voice-visualizer";
 import { useVoiceFSM, VoiceState } from "@/hooks/use-voice-fsm";
 import { Mic, ArrowLeftRight, Wifi, WifiOff } from "lucide-react";
 import { useState } from "react";
+import { type DeepLLanguage } from "@/services/deepl-languages";
 
 interface CyberVoiceCardProps {
   className?: string;
@@ -107,7 +108,7 @@ export function CyberVoiceCard({
       <div className="flex items-center justify-between gap-4">
         <LanguageSelector
           value={fromLang}
-          onChange={(lang) => setFromLang(lang.code)}
+          onChange={(lang: DeepLLanguage) => setFromLang(lang.code)}
           className="flex-1"
         />
 
@@ -125,7 +126,7 @@ export function CyberVoiceCard({
 
         <LanguageSelector
           value={toLang}
-          onChange={(lang) => setToLang(lang.code)}
+          onChange={(lang: DeepLLanguage) => setToLang(lang.code)}
           className="flex-1"
         />
       </div>
