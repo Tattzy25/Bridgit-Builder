@@ -105,7 +105,7 @@ export function WelcomeScreen({ onModeSelect, onClose }: WelcomeScreenProps) {
             Skip Introduction
           </CyberButton>
         </div>
-      </NeumorphicCard>
+      </HoloCard>
     </div>
   );
 }
