@@ -187,9 +187,9 @@ export default function Index() {
               defaultToLang="FR"
               isActive={false}
               isRemoteSession={false}
-              isFlipped={true} // Flipped on mobile for face-to-face
+              isFlipped={false}
               userId="user1"
-              className="lg:transform-none" // Remove flip on desktop
+              className="mobile-flip-first" // Flip on mobile only
             />
           </div>
 
