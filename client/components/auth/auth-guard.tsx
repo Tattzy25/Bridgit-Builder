@@ -16,7 +16,16 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // Loading state
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neubg cyber-bg">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{
+          backgroundImage:
+            "url(https://cdn.builder.io/api/v1/image/assets%2Ff211fb8c7c124ed3b265fee7bf5c0654%2F0fa8a05f0c6c4a82a14ffab76905b54b)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
         <HoloCard className="w-full max-w-md text-center space-y-6" glow>
           <div className="animate-spin w-8 h-8 border-2 border-bridgit-primary border-t-transparent rounded-full mx-auto"></div>
           <div className="text-lg font-semibold text-foreground">
