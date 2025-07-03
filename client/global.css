@@ -322,4 +322,44 @@
       hsl(var(--bridgit-gold) / 0.2)
     );
   }
+
+  /* Premium text effects */
+  .text-premium {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--bridgit-primary)),
+      hsl(var(--bridgit-secondary)),
+      hsl(var(--bridgit-accent))
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--neushadow));
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+      180deg,
+      hsl(var(--bridgit-primary) / 0.5),
+      hsl(var(--bridgit-secondary) / 0.5)
+    );
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+      180deg,
+      hsl(var(--bridgit-primary) / 0.8),
+      hsl(var(--bridgit-secondary) / 0.8)
+    );
+  }
 }
