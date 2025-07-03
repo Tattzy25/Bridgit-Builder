@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { VoiceCard } from "@/components/ui/voice-card";
+import { CyberVoiceCard } from "@/components/ui/cyber-voice-card";
 import { MainMenu } from "@/components/ui/main-menu";
 import { StatusIndicator } from "@/components/ui/status-indicator";
 import { WelcomeScreen } from "@/components/ui/welcome-screen";
+import { CyberButton } from "@/components/ui/cyber-button";
 import { cn } from "@/lib/utils";
 
 export default function Index() {
@@ -14,7 +15,6 @@ export default function Index() {
   >("disconnected");
 
   useEffect(() => {
-    // Check if user has seen welcome screen before
     const hasSeenWelcome = localStorage.getItem("bridgit-welcome-seen");
     if (hasSeenWelcome) {
       setShowWelcome(false);
@@ -40,80 +40,170 @@ export default function Index() {
   };
 
   const BridgitLogo = () => (
-    <button
+    <CyberButton
       onClick={() => setIsMenuOpen(true)}
+      variant="primary"
+      size={mode === "just-me" ? "lg" : "xl"}
       className={cn(
-        "neu-button flex items-center justify-center transition-all duration-300 hover:scale-105",
-        mode === "just-me" ? "w-16 h-16" : "w-20 h-20",
+        "relative group overflow-hidden",
+        "shadow-[0_0_50px_-10px] shadow-bridgit-primary/50",
+        "hover:shadow-[0_0_80px_-5px] hover:shadow-bridgit-primary/70",
+        "transition-all duration-500 hover:scale-110",
+        "animate-float",
       )}
+      glow
     >
-      <img
-        src="https://cdn.builder.io/api/v1/assets/f211fb8c7c124ed3b265fee7bf5c0654/bridgit-ai-logo-e267fd?format=webp&width=800"
-        alt="Bridgit AI"
-        className="w-10 h-10 object-contain"
-      />
-    </button>
-  );
-
-  const renderJustMeMode = () => (
-    <div className="min-h-screen bg-neubg flex flex-col items-center justify-center p-4 space-y-8">
-      {/* Logo at top */}
-      <div className="animate-fade-in">
-        <BridgitLogo />
-      </div>
-
-      {/* Single Voice Card */}
-      <div className="animate-fade-in">
-        <VoiceCard
-          placeholder="Enter text to translate"
-          translationPlaceholder="Translation will appear here"
-          className="w-full max-w-md"
+      <div className="relative z-10 flex items-center justify-center">
+        <img
+          src="https://cdn.builder.io/api/v1/assets/f211fb8c7c124ed3b265fee7bf5c0654/bridgit-ai-logo-e267fd?format=webp&width=800"
+          alt="Bridgit AI"
+          className="w-12 h-12 object-contain filter brightness-0 invert"
         />
       </div>
 
-      {/* Status Indicator */}
-      <div className="animate-fade-in">
-        <StatusIndicator status={status} />
+      {/* Holographic overlay */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-hologram-flicker" />
+
+      {/* Pulse effect */}
+      <div className="absolute inset-0 rounded-full border-2 border-white/20 opacity-0 group-hover:opacity-100 animate-ping" />
+    </CyberButton>
+  );
+
+  const renderJustMeMode = () => (
+    <div className="min-h-screen bg-neubg relative overflow-hidden">
+      {/* Cyber background effects */}
+      <div className="cyber-bg" />
+
+      {/* Matrix rain effect */}
+      <div className="absolute inset-0 opacity-5">
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute text-bridgit-primary text-xs animate-matrix-rain opacity-30"
+            style={{
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${3 + Math.random() * 2}s`,
+            }}
+          >
+            01001010
+          </div>
+        ))}
+      </div>
+
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 space-y-12">
+        {/* Logo at top */}
+        <div className="animate-slide-up">
+          <BridgitLogo />
+        </div>
+
+        {/* Single Voice Card */}
+        <div className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
+          <CyberVoiceCard
+            placeholder="🎤 Click to speak and translate instantly"
+            translationPlaceholder="⚡ Your translation will appear here with lightning speed"
+            className="w-full max-w-lg"
+            isActive={status === "speaking" || status === "translating"}
+          />
+        </div>
+
+        {/* Status Indicator */}
+        <div className="animate-slide-up" style={{ animationDelay: "0.4s" }}>
+          <StatusIndicator status={status} />
+        </div>
+
+        {/* Premium features teaser */}
+        <div
+          className="animate-slide-up text-center space-y-2"
+          style={{ animationDelay: "0.6s" }}
+        >
+          <p className="text-sm text-muted-foreground">
+            ✨ Premium: Voice Cloning • Real-time Sessions • 100+ Languages
+          </p>
+          <CyberButton variant="gold" size="sm" className="font-bold">
+            Upgrade to Pro
+          </CyberButton>
+        </div>
       </div>
     </div>
   );
 
   const renderTalkTogetherMode = () => (
-    <div className="min-h-screen bg-neubg flex flex-col items-center justify-center p-4 gap-6 lg:gap-8">
-      {/* Mobile: Stacked layout, Desktop: Side by side */}
-      <div className="w-full max-w-6xl flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-8">
-        {/* First Voice Card */}
-        <div className="animate-fade-in w-full lg:flex-1 max-w-md">
-          <VoiceCard
-            placeholder="Enter text to translate"
-            translationPlaceholder="Translation will appear here"
-            defaultFromLang="EN"
-            defaultToLang="FR"
-          />
-        </div>
+    <div className="min-h-screen bg-neubg relative overflow-hidden">
+      {/* Cyber background effects */}
+      <div className="cyber-bg" />
 
-        {/* Logo in center */}
-        <div className="animate-fade-in lg:mx-4">
-          <BridgitLogo />
-        </div>
-
-        {/* Second Voice Card */}
-        <div className="animate-fade-in w-full lg:flex-1 max-w-md">
-          <VoiceCard
-            placeholder="Enter text to translate"
-            translationPlaceholder="Translation will appear here"
-            defaultFromLang="FR"
-            defaultToLang="EN"
-          />
-        </div>
+      {/* Connection beam effect */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="w-full max-w-6xl h-px bg-gradient-to-r from-transparent via-bridgit-primary/50 to-transparent animate-glow-pulse" />
       </div>
 
-      {/* Status Indicator */}
-      <div className="animate-fade-in">
-        <StatusIndicator
-          status={status}
-          className={mode === "talk-together" ? "text-center" : ""}
-        />
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 gap-8">
+        {/* Mobile: Stacked layout, Desktop: Side by side */}
+        <div className="w-full max-w-7xl flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
+          {/* First Voice Card */}
+          <div className="animate-slide-up w-full lg:flex-1 max-w-lg">
+            <CyberVoiceCard
+              placeholder="🎤 Person 1: Speak here"
+              translationPlaceholder="⚡ Translation for Person 2"
+              defaultFromLang="EN"
+              defaultToLang="FR"
+              isActive={status === "speaking"}
+            />
+          </div>
+
+          {/* Logo in center with connection effects */}
+          <div
+            className="animate-slide-up relative"
+            style={{ animationDelay: "0.2s" }}
+          >
+            <BridgitLogo />
+
+            {/* Connection pulse rings */}
+            <div className="absolute inset-0 rounded-full border border-bridgit-primary/30 animate-ping" />
+            <div
+              className="absolute inset-0 rounded-full border border-bridgit-secondary/20 animate-ping"
+              style={{ animationDelay: "0.5s" }}
+            />
+          </div>
+
+          {/* Second Voice Card */}
+          <div
+            className="animate-slide-up w-full lg:flex-1 max-w-lg"
+            style={{ animationDelay: "0.1s" }}
+          >
+            <CyberVoiceCard
+              placeholder="🎤 Person 2: Speak here"
+              translationPlaceholder="⚡ Translation for Person 1"
+              defaultFromLang="FR"
+              defaultToLang="EN"
+              isActive={status === "translating"}
+            />
+          </div>
+        </div>
+
+        {/* Status Indicator */}
+        <div className="animate-slide-up" style={{ animationDelay: "0.4s" }}>
+          <StatusIndicator status={status} className="status-premium" />
+        </div>
+
+        {/* Session info */}
+        <div
+          className="animate-slide-up text-center space-y-2"
+          style={{ animationDelay: "0.6s" }}
+        >
+          <p className="text-sm text-muted-foreground">
+            🔐 Session: B4F7X2 • End-to-End Encrypted • Real-time Sync
+          </p>
+          <div className="flex gap-2 justify-center">
+            <CyberButton variant="neon" size="sm">
+              Share Code
+            </CyberButton>
+            <CyberButton variant="ghost" size="sm">
+              End Session
+            </CyberButton>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -135,13 +225,6 @@ export default function Index() {
         onModeChange={handleModeChange}
         currentMode={mode}
       />
-
-      {/* Background Pattern */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-br from-neubg via-transparent to-neubg opacity-50" />
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-bridgit-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-bridgit-secondary/5 rounded-full blur-3xl" />
-      </div>
     </>
   );
 }
