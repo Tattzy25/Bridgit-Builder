@@ -10,9 +10,9 @@ export default function Index() {
   const [mode, setMode] = useState<"just-me" | "talk-together">("just-me");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
-  const [status, setStatus] = useState<
-    "disconnected" | "connecting" | "connected" | "speaking" | "translating"
-  >("disconnected");
+  const [sessionCode, setSessionCode] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isHost, setIsHost] = useState(false);
 
   useEffect(() => {
     const hasSeenWelcome = localStorage.getItem("bridgit-welcome-seen");
@@ -100,17 +100,29 @@ export default function Index() {
         {/* Single Voice Card */}
         <div className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
           <CyberVoiceCard
-            placeholder="🎤 Click to speak and translate instantly"
-            translationPlaceholder="⚡ Your translation will appear here with lightning speed"
             className="w-full max-w-lg"
-            isActive={status === "speaking" || status === "translating"}
+            isActive={isConnected}
+            isRemoteSession={sessionCode !== null}
+            defaultFromLang="EN"
+            defaultToLang="FR"
+            userId="user1"
           />
         </div>
 
-        {/* Status Indicator */}
-        <div className="animate-slide-up" style={{ animationDelay: "0.4s" }}>
-          <StatusIndicator status={status} />
-        </div>
+        {/* Session Info (Only if connected) */}
+        {sessionCode && (
+          <div
+            className="animate-slide-up text-center space-y-2"
+            style={{ animationDelay: "0.4s" }}
+          >
+            <div className="neu-button px-6 py-3 text-sm">
+              <span className="text-muted-foreground">Session: </span>
+              <span className="font-mono text-bridgit-primary">
+                {sessionCode}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Premium features teaser */}
         <div
@@ -118,11 +130,8 @@ export default function Index() {
           style={{ animationDelay: "0.6s" }}
         >
           <p className="text-sm text-muted-foreground">
-            ✨ Premium: Voice Cloning • Real-time Sessions • 100+ Languages
+            ⚡ Real-time Voice Translation • 100+ Languages
           </p>
-          <CyberButton variant="gold" size="sm" className="font-bold">
-            Upgrade to Pro
-          </CyberButton>
         </div>
       </div>
     </div>
@@ -141,68 +150,51 @@ export default function Index() {
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 gap-8">
         {/* Mobile: Stacked layout, Desktop: Side by side */}
         <div className="w-full max-w-7xl flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
-          {/* First Voice Card */}
+          {/* First Voice Card (Top on mobile - flipped) */}
           <div className="animate-slide-up w-full lg:flex-1 max-w-lg">
             <CyberVoiceCard
-              placeholder="🎤 Person 1: Speak here"
-              translationPlaceholder="⚡ Translation for Person 2"
               defaultFromLang="EN"
               defaultToLang="FR"
-              isActive={status === "speaking"}
+              isActive={false}
+              isRemoteSession={false}
+              isFlipped={true} // Flipped on mobile for face-to-face
+              userId="user1"
+              className="lg:transform-none" // Remove flip on desktop
             />
           </div>
 
-          {/* Logo in center with connection effects */}
+          {/* Logo in center */}
           <div
             className="animate-slide-up relative"
             style={{ animationDelay: "0.2s" }}
           >
             <BridgitLogo />
-
-            {/* Connection pulse rings */}
-            <div className="absolute inset-0 rounded-full border border-bridgit-primary/30 animate-ping" />
-            <div
-              className="absolute inset-0 rounded-full border border-bridgit-secondary/20 animate-ping"
-              style={{ animationDelay: "0.5s" }}
-            />
           </div>
 
-          {/* Second Voice Card */}
+          {/* Second Voice Card (Bottom on mobile - normal) */}
           <div
             className="animate-slide-up w-full lg:flex-1 max-w-lg"
             style={{ animationDelay: "0.1s" }}
           >
             <CyberVoiceCard
-              placeholder="🎤 Person 2: Speak here"
-              translationPlaceholder="⚡ Translation for Person 1"
               defaultFromLang="FR"
               defaultToLang="EN"
-              isActive={status === "translating"}
+              isActive={false}
+              isRemoteSession={false}
+              isFlipped={false}
+              userId="user2"
             />
           </div>
         </div>
 
-        {/* Status Indicator */}
-        <div className="animate-slide-up" style={{ animationDelay: "0.4s" }}>
-          <StatusIndicator status={status} className="status-premium" />
-        </div>
-
-        {/* Session info */}
+        {/* Local Mode Info */}
         <div
           className="animate-slide-up text-center space-y-2"
-          style={{ animationDelay: "0.6s" }}
+          style={{ animationDelay: "0.4s" }}
         >
           <p className="text-sm text-muted-foreground">
-            🔐 Session: B4F7X2 • End-to-End Encrypted • Real-time Sync
+            💬 Local Mode • Face-to-Face Translation
           </p>
-          <div className="flex gap-2 justify-center">
-            <CyberButton variant="neon" size="sm">
-              Share Code
-            </CyberButton>
-            <CyberButton variant="ghost" size="sm">
-              End Session
-            </CyberButton>
-          </div>
         </div>
       </div>
     </div>
