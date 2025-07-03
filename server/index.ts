@@ -1,6 +1,13 @@
 import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
+import {
+  createSession,
+  updateSession,
+  getSession,
+  getUserSessions,
+  deleteSession,
+} from "./routes/sessions";
 
 export function createServer() {
   const app = express();
@@ -16,6 +23,13 @@ export function createServer() {
   });
 
   app.get("/api/demo", handleDemo);
+
+  // Session tracking endpoints
+  app.post("/api/sessions", createSession);
+  app.patch("/api/sessions/:sessionId", updateSession);
+  app.get("/api/sessions/:sessionId", getSession);
+  app.get("/api/users/:userId/sessions", getUserSessions);
+  app.delete("/api/sessions/:sessionId", deleteSession);
 
   return app;
 }
