@@ -118,7 +118,7 @@ export function MainMenu({
         </div>
       </div>
 
-      {/* Session Actions */}
+      {/* Session Control */}
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-bridgit-secondary uppercase tracking-wider flex items-center gap-2">
           <Shield className="h-4 w-4" />
