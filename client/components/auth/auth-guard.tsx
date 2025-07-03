@@ -61,37 +61,46 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
           {/* Auth Card */}
           <HoloCard className="mx-auto" style={{ margin: "24px auto 0" }}>
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-foreground animate-neon-glow">
-                Bridgit AI
-              </h1>
-              <p className="text-sm text-bridgit-primary">
-                Neural Translation Hub
-              </p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="space-y-2">
-                <Shield className="h-6 w-6 text-bridgit-primary mx-auto" />
-                <div className="text-xs text-muted-foreground">Secure</div>
+            <div
+              className="w-fit mx-auto"
+              style={{
+                backgroundColor: "rgba(17, 17, 23, 0.9)",
+                borderRadius: "8px",
+                boxShadow: "3px 3px 2px 1px rgba(189, 16, 224, 1)",
+                border: "1.11111px solid rgba(189, 16, 224, 1)",
+                padding: "32px 40px",
+                backdropFilter: "blur(24px)",
+                textAlign: "center",
+              }}
+            >
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-1">
+                  <h1
+                    className="mx-auto"
+                    style={{
+                      color: "rgba(189, 16, 224, 1)",
+                      textShadow: "2px 2px 3px rgba(0, 0, 0, 1)",
+                      fontFamily: "Audiowide, display",
+                      fontSize: "24px",
+                      fontWeight: "700",
+                      lineHeight: "24px",
+                    }}
+                  >
+                    VIBE IN !
+                  </h1>
+                  <p
+                    className="mx-auto"
+                    style={{
+                      fontSize: "18px",
+                      fontWeight: "400",
+                      lineHeight: "18px",
+                      color: "rgb(255, 255, 255)",
+                    }}
+                  >
+                    Vibe. Թարգմանիր. Connecte. 世界.
+                  </p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Zap className="h-6 w-6 text-bridgit-gold mx-auto" />
-                <div className="text-xs text-muted-foreground">Instant</div>
-              </div>
-              <div className="space-y-2">
-                <User className="h-6 w-6 text-bridgit-neon mx-auto" />
-                <div className="text-xs text-muted-foreground">Personal</div>
-              </div>
-            </div>
-
-            <div className="p-4 bg-bridgit-primary/10 rounded-neu border border-bridgit-primary/20">
-              <p className="text-sm text-foreground font-medium">
-                🔐 Authentication Required
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Sign in to access real-time voice translation
-              </p>
             </div>
           </HoloCard>
 
