@@ -211,7 +211,6 @@ export default function Index() {
               defaultToLang="EN"
               isActive={false}
               isRemoteSession={false}
-              isFlipped={false}
               userId="user2"
             />
           </div>
