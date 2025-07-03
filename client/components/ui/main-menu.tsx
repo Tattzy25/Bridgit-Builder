@@ -214,28 +214,28 @@ export function MainMenu({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-foreground">Settings</h2>
-        <NeumorphicButton
+        <CyberButton
           variant="ghost"
           size="icon"
           onClick={() => setActiveTab("main")}
         >
           <X className="h-4 w-4" />
-        </NeumorphicButton>
+        </CyberButton>
       </div>
 
       <div className="space-y-3">
-        <NeumorphicButton className="w-full justify-start gap-3">
-          <Mic className="h-4 w-4" />
+        <CyberButton variant="gold" className="w-full justify-start gap-3">
+          <Crown className="h-4 w-4" />
           Clone Your Voice (Premium)
-        </NeumorphicButton>
-        <NeumorphicButton className="w-full justify-start gap-3">
+        </CyberButton>
+        <CyberButton className="w-full justify-start gap-3">
           <Volume2 className="h-4 w-4" />
           Voice Library
-        </NeumorphicButton>
-        <NeumorphicButton className="w-full justify-start gap-3">
+        </CyberButton>
+        <CyberButton className="w-full justify-start gap-3">
           <Settings className="h-4 w-4" />
           Account Settings
-        </NeumorphicButton>
+        </CyberButton>
       </div>
     </div>
   );
@@ -244,13 +244,13 @@ export function MainMenu({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-foreground">Customize Colors</h2>
-        <NeumorphicButton
+        <CyberButton
           variant="ghost"
           size="icon"
           onClick={() => setActiveTab("main")}
         >
           <X className="h-4 w-4" />
-        </NeumorphicButton>
+        </CyberButton>
       </div>
 
       <div className="space-y-4">
@@ -318,23 +318,24 @@ export function MainMenu({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-foreground">Voice Settings</h2>
-        <NeumorphicButton
+        <CyberButton
           variant="ghost"
           size="icon"
           onClick={() => setActiveTab("main")}
         >
           <X className="h-4 w-4" />
-        </NeumorphicButton>
+        </CyberButton>
       </div>
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+        <h3 className="text-sm font-semibold text-bridgit-primary uppercase tracking-wider flex items-center gap-2">
+          <Volume2 className="h-4 w-4" />
           Basic Voices
         </h3>
         {["Alloy", "Echo", "Fable", "Onyx", "Nova", "Shimmer"].map((voice) => (
-          <NeumorphicButton key={voice} className="w-full justify-start">
+          <CyberButton key={voice} className="w-full justify-start">
             {voice}
-          </NeumorphicButton>
+          </CyberButton>
         ))}
 
         <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mt-6">
