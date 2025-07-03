@@ -4,18 +4,28 @@
 
 @layer base {
   /**
-   * Tailwind CSS theme
-   * tailwind.config.ts expects the following color variables to be expressed as HSL values.
-   * A different format will require also updating the theme in tailwind.config.ts.
-  */
+   * Bridgit AI Neumorphic Design System
+   * Customizable color scheme with neumorphic shadows
+   */
   :root {
-    --background: 0 0% 100%;
+    /* Neumorphic colors - customizable */
+    --neubg: 220 20% 94%;
+    --neushadow: 220 14% 85%;
+    --neulight: 220 24% 98%;
+
+    /* Bridgit AI brand colors - customizable */
+    --bridgit-primary: 280 100% 50%;
+    --bridgit-secondary: 200 100% 50%;
+    --bridgit-accent: 320 100% 50%;
+
+    /* Original shadcn theme */
+    --background: 220 20% 94%;
     --foreground: 222.2 84% 4.9%;
 
-    --card: 0 0% 100%;
+    --card: 220 20% 94%;
     --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 0 0% 100%;
+    --popover: 220 20% 94%;
     --popover-foreground: 222.2 84% 4.9%;
 
     --primary: 222.2 47.4% 11.2%;
@@ -40,30 +50,27 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --neubg: 220 20% 12%;
+    --neushadow: 220 20% 6%;
+    --neulight: 220 20% 18%;
+
+    --background: 220 20% 12%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 220 20% 12%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 220 20% 12%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 210 40% 98%;
@@ -101,6 +108,47 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-neubg text-foreground font-medium;
+    font-family:
+      "Inter",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      "Roboto",
+      sans-serif;
+  }
+}
+
+@layer components {
+  .neu-card {
+    @apply bg-neubg rounded-neu shadow-neu;
+  }
+
+  .neu-card-inset {
+    @apply bg-neubg rounded-neu shadow-neu-inset;
+  }
+
+  .neu-button {
+    @apply bg-neubg rounded-neu shadow-neu transition-all duration-200 ease-out;
+  }
+
+  .neu-button:hover {
+    @apply shadow-neu-sm;
+  }
+
+  .neu-button:active {
+    @apply shadow-neu-inset;
+  }
+
+  .neu-input {
+    @apply bg-neubg rounded-neu shadow-neu-inset px-6 py-4 text-foreground placeholder:text-muted-foreground border-0 focus:outline-none focus:ring-0;
+  }
+
+  .neu-microphone {
+    @apply neu-button w-16 h-16 flex items-center justify-center cursor-pointer select-none;
+  }
+
+  .neu-microphone:active {
+    @apply shadow-neu-sm-inset;
   }
 }
