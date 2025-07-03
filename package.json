@@ -24,6 +24,7 @@
     "@ably/chat": "^0.9.0",
     "@ably/spaces": "^0.4.0",
     "@clerk/nextjs": "^6.23.2",
+    "@elevenlabs/elevenlabs-js": "^2.5.0",
     "@google/generative-ai": "^0.24.1",
     "@neondatabase/serverless": "^1.0.1",
     "@types/pg": "^8.15.4",
