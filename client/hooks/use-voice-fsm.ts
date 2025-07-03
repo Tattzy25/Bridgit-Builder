@@ -2,9 +2,9 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { sessionTracker } from "@/services/session-tracker";
 import { useAuth, useTokens } from "./use-auth";
 import {
-  geminiClient,
+  geminiSTTClient,
   deepLClient,
-  elevenLabsClient,
+  elevenLabsTTSClient,
   ablyClient,
 } from "@/services/api-clients";
 
@@ -229,27 +229,11 @@ export function useVoiceFSM(config: VoiceConfig) {
 
         try {
           // Real Gemini STT API call
-          const model = geminiClient.getGenerativeModel({
-            model: "gemini-pro",
-          });
-
-          // Convert audio blob to base64 for Gemini API
-          const arrayBuffer = await audioBlob.arrayBuffer();
-          const base64Audio = btoa(
-            String.fromCharCode(...new Uint8Array(arrayBuffer)),
+          const sttResult = await geminiSTTClient.transcribeAudio(
+            audioBlob,
+            config.fromLang,
           );
-
-          const result = await model.generateContent([
-            {
-              inlineData: {
-                data: base64Audio,
-                mimeType: "audio/webm",
-              },
-            },
-            `Transcribe this audio to text in ${config.fromLang} language. Return only the transcribed text.`,
-          ]);
-
-          finalText = result.response.text().trim();
+          finalText = sttResult.text;
         } catch (error) {
           console.log("Gemini STT failed, trying Groq fallback");
           sttProvider = "groq";
@@ -316,18 +300,13 @@ export function useVoiceFSM(config: VoiceConfig) {
 
         try {
           // Real ElevenLabs API call
-          const audioResponse = await elevenLabsClient.textToSpeech.convert({
-            voice_id: "21m00Tcm4TlvDq8ikWAM", // Default voice
-            text: translatedText,
-            model_id: "eleven_multilingual_v2",
-          });
+          const ttsResult = await elevenLabsTTSClient.synthesizeText(
+            translatedText,
+            { language: config.toLang },
+          );
 
-          // Convert response to audio URL and play
-          const audioBuffer = await audioResponse.arrayBuffer();
-          const audioBlob = new Blob([audioBuffer], { type: "audio/mpeg" });
-          const audioUrl = URL.createObjectURL(audioBlob);
-
-          const audio = new Audio(audioUrl);
+          // Play the audio
+          const audio = new Audio(ttsResult.audioUrl);
           audio.play();
 
           // Wait for audio to finish
