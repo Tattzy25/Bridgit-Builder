@@ -294,8 +294,6 @@
   .scrollbar-hidden::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
   }
-    );
-  }
 
   /* Animated Background */
   .cyber-bg {
