@@ -1,29 +1,15 @@
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
-
-interface Language {
-  code: string;
-  name: string;
-  flag: string;
-}
-
-const languages: Language[] = [
-  { code: "EN", name: "English", flag: "🇺🇸" },
-  { code: "FR", name: "French", flag: "🇫🇷" },
-  { code: "ES", name: "Spanish", flag: "🇪🇸" },
-  { code: "DE", name: "German", flag: "🇩🇪" },
-  { code: "IT", name: "Italian", flag: "🇮🇹" },
-  { code: "PT", name: "Portuguese", flag: "🇵🇹" },
-  { code: "ZH", name: "Chinese", flag: "🇨🇳" },
-  { code: "JA", name: "Japanese", flag: "🇯🇵" },
-  { code: "KO", name: "Korean", flag: "🇰🇷" },
-  { code: "AR", name: "Arabic", flag: "🇸🇦" },
-];
+import {
+  DEEPL_LANGUAGES,
+  getSortedLanguages,
+  type DeepLLanguage,
+} from "@/services/deepl-languages";
 
 interface LanguageSelectorProps {
   value?: string;
-  onChange?: (language: Language) => void;
+  onChange?: (language: DeepLLanguage) => void;
   className?: string;
 }
 
@@ -33,10 +19,11 @@ export function LanguageSelector({
   className,
 }: LanguageSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const sortedLanguages = getSortedLanguages();
   const selectedLanguage =
-    languages.find((lang) => lang.code === value) || languages[0];
+    DEEPL_LANGUAGES.find((lang) => lang.code === value) || DEEPL_LANGUAGES[0];
 
-  const handleSelect = (language: Language) => {
+  const handleSelect = (language: DeepLLanguage) => {
     onChange?.(language);
     setIsOpen(false);
   };
@@ -77,24 +64,24 @@ export function LanguageSelector({
             onClick={() => setIsOpen(false)}
           />
           {/* Dropdown */}
-          <div className="absolute top-full left-0 mt-3 w-56 bg-neubg/90 backdrop-blur-xl rounded-neu-lg border border-white/10 py-3 z-50 max-h-64 overflow-y-auto shadow-[0_25px_50px_-12px] shadow-black/25">
-            {languages.map((language) => (
+          <div className="absolute top-full left-0 mt-3 w-64 bg-neubg/95 backdrop-blur-xl rounded-neu-lg border border-white/10 py-3 z-50 max-h-80 overflow-y-auto shadow-[0_25px_50px_-12px] shadow-black/25 scrollbar-hidden">
+            {sortedLanguages.map((language) => (
               <button
                 key={language.code}
                 onClick={() => handleSelect(language)}
                 className={cn(
-                  "w-full flex items-center gap-4 px-5 py-3 text-sm text-foreground transition-all duration-200",
+                  "w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-all duration-200",
                   "hover:bg-gradient-to-r hover:from-bridgit-primary/10 hover:to-bridgit-secondary/10",
                   "hover:border-l-2 hover:border-l-bridgit-primary",
                   language.code === value &&
                     "bg-bridgit-primary/20 border-l-2 border-l-bridgit-primary",
                 )}
               >
-                <span className="text-xl">{language.flag}</span>
-                <span className="font-semibold tracking-wide">
+                <span className="text-lg">{language.flag}</span>
+                <span className="font-bold tracking-wider text-base">
                   {language.code}
                 </span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-muted-foreground text-xs truncate flex-1 text-left">
                   {language.name}
                 </span>
               </button>

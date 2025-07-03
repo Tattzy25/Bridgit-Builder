@@ -100,21 +100,21 @@ export function MainMenu({
           <Brain className="h-4 w-4" />
           AI Mode
         </h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <CyberButton
             variant={currentMode === "just-me" ? "primary" : "default"}
             onClick={() => onModeChange("just-me")}
-            className="flex-col h-24 gap-2"
+            className="flex-col h-28 gap-3 rounded-xl"
           >
-            <User className="h-6 w-6" />
+            <User className="h-7 w-7" />
             <span className="text-sm font-medium">Just Me</span>
           </CyberButton>
           <CyberButton
             variant={currentMode === "talk-together" ? "gold" : "default"}
             onClick={() => onModeChange("talk-together")}
-            className="flex-col h-24 gap-2"
+            className="flex-col h-28 gap-3 rounded-xl"
           >
-            <Users className="h-6 w-6" />
+            <Users className="h-7 w-7" />
             <span className="text-sm font-medium">Talk Together</span>
           </CyberButton>
         </div>
@@ -126,60 +126,50 @@ export function MainMenu({
           <Shield className="h-4 w-4" />
           Session Control
         </h3>
-        <div className="space-y-3">
-          {currentMode === "just-me" ? (
-            <>
-              {!sessionCode ? (
-                <>
-                  <CyberButton
-                    variant="neon"
-                    className="w-full justify-start gap-3"
-                    onClick={onHostSession}
-                  >
-                    <UserPlus className="h-5 w-5" />
-                    <div className="text-left">
-                      <div className="font-semibold">Host Session</div>
-                      <div className="text-xs opacity-80">
-                        Create secure room
-                      </div>
-                    </div>
-                  </CyberButton>
-                  <CyberButton
-                    variant="primary"
-                    className="w-full justify-start gap-3"
-                    onClick={onJoinSession}
-                  >
-                    <Users className="h-5 w-5" />
-                    <div className="text-left">
-                      <div className="font-semibold">Join Session</div>
-                      <div className="text-xs opacity-80">Enter room code</div>
-                    </div>
-                  </CyberButton>
-                </>
-              ) : (
-                <CyberButton
-                  variant="ghost"
-                  className="w-full justify-start gap-3 border-red-500/20 text-red-400"
-                  onClick={onEndSession}
-                >
-                  <X className="h-5 w-5" />
-                  <div className="text-left">
-                    <div className="font-semibold">End Session</div>
-                    <div className="text-xs opacity-80">
-                      Disconnect from room
-                    </div>
-                  </div>
-                </CyberButton>
-              )}
-            </>
-          ) : (
-            <div className="text-center p-4 text-muted-foreground text-sm">
-              Talk Together mode uses local translation only.
-              <br />
-              Switch to "Just Me" for remote sessions.
+        {currentMode === "just-me" ? (
+          !sessionCode ? (
+            <div className="grid grid-cols-2 gap-4">
+              <CyberButton
+                variant="neon"
+                className="flex-col h-28 gap-3 rounded-xl"
+                onClick={onHostSession}
+              >
+                <UserPlus className="h-7 w-7" />
+                <div className="text-center">
+                  <div className="font-semibold text-sm">Host</div>
+                  <div className="text-xs opacity-80">Create room</div>
+                </div>
+              </CyberButton>
+              <CyberButton
+                variant="primary"
+                className="flex-col h-28 gap-3 rounded-xl"
+                onClick={onJoinSession}
+              >
+                <Users className="h-7 w-7" />
+                <div className="text-center">
+                  <div className="font-semibold text-sm">Join</div>
+                  <div className="text-xs opacity-80">Enter code</div>
+                </div>
+              </CyberButton>
             </div>
-          )}
-        </div>
+          ) : (
+            <CyberButton
+              variant="ghost"
+              className="w-full justify-start gap-3 border-red-500/20 text-red-400"
+              onClick={onEndSession}
+            >
+              <X className="h-5 w-5" />
+              <div className="text-left">
+                <div className="font-semibold">End Session</div>
+                <div className="text-xs opacity-80">Disconnect from room</div>
+              </div>
+            </CyberButton>
+          )
+        ) : (
+          <div className="text-center p-4 text-muted-foreground text-sm bg-neubg/30 rounded-neu">
+            Talk Together mode uses local translation only.
+          </div>
+        )}
       </div>
 
       {/* Token & Plan */}
@@ -188,100 +178,100 @@ export function MainMenu({
           <Crown className="h-4 w-4" />
           Token & Plan
         </h3>
-        <div className="space-y-3">
-          <div className="neu-card-inset p-4 text-center">
-            <div className="text-lg font-bold text-bridgit-gold">
-              247 tokens
+        <div className="space-y-4">
+          <div className="neu-card-inset p-4 text-center rounded-xl">
+            <div className="text-xl font-bold text-bridgit-gold">247</div>
+            <div className="text-xs text-muted-foreground">
+              tokens remaining
             </div>
-            <div className="text-xs text-muted-foreground">remaining</div>
           </div>
-          <CyberButton
-            variant="gold"
-            className="w-full justify-start gap-3"
-            onClick={() => setActiveTab("pricing")}
-          >
-            <Zap className="h-5 w-5" />
-            <div className="text-left">
-              <div className="font-semibold">Buy More Tokens</div>
-              <div className="text-xs opacity-80">Starting at $4.99</div>
-            </div>
-          </CyberButton>
-          <CyberButton
-            variant="primary"
-            className="w-full justify-start gap-3"
-            onClick={() => setActiveTab("pricing")}
-          >
-            <Crown className="h-5 w-5" />
-            <div className="text-left">
-              <div className="font-semibold">Upgrade Plan</div>
-              <div className="text-xs opacity-80">Starting at $9.99/month</div>
-            </div>
-          </CyberButton>
+          <div className="grid grid-cols-2 gap-4">
+            <CyberButton
+              variant="gold"
+              className="flex-col h-28 gap-3 rounded-xl"
+              onClick={() => setActiveTab("pricing")}
+            >
+              <Zap className="h-7 w-7" />
+              <div className="text-center">
+                <div className="font-semibold text-sm">Buy Tokens</div>
+                <div className="text-xs opacity-80">From $4.99</div>
+              </div>
+            </CyberButton>
+            <CyberButton
+              variant="primary"
+              className="flex-col h-28 gap-3 rounded-xl"
+              onClick={() => setActiveTab("pricing")}
+            >
+              <Crown className="h-7 w-7" />
+              <div className="text-center">
+                <div className="font-semibold text-sm">Upgrade</div>
+                <div className="text-xs opacity-80">From $9.99/mo</div>
+              </div>
+            </CyberButton>
+          </div>
         </div>
       </div>
 
-      {/* Account */}
+      {/* Account & Quick Access */}
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           <User className="h-4 w-4" />
-          Account
+          Account & Settings
         </h3>
-        <div className="space-y-3">
-          <CyberButton className="w-full justify-start gap-3">
-            <User className="h-5 w-5" />
-            <div className="text-left">
-              <div className="font-semibold">Profile</div>
-              <div className="text-xs opacity-80">Email, username, verify</div>
-            </div>
-          </CyberButton>
-          <CyberButton className="w-full justify-start gap-3">
-            <Settings className="h-5 w-5" />
-            <div className="text-left">
-              <div className="font-semibold">Sign In / Sign Up</div>
+
+        {/* Account Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          <CyberButton className="flex-col h-28 gap-3 rounded-xl">
+            <User className="h-7 w-7" />
+            <div className="text-center">
+              <div className="font-semibold text-sm">Profile</div>
               <div className="text-xs opacity-80">Manage account</div>
             </div>
           </CyberButton>
+          <CyberButton className="flex-col h-28 gap-3 rounded-xl">
+            <Settings className="h-7 w-7" />
+            <div className="text-center">
+              <div className="font-semibold text-sm">Sign In</div>
+              <div className="text-xs opacity-80">Login / Register</div>
+            </div>
+          </CyberButton>
         </div>
-      </div>
 
-      {/* Quick Settings */}
-      <div className="grid grid-cols-2 gap-3">
-        <CyberButton
-          variant="ghost"
-          onClick={() => setActiveTab("voice")}
-          className="flex-col h-20 gap-2 hover:bg-bridgit-primary/10"
-        >
-          <Volume2 className="h-5 w-5 text-bridgit-primary" />
-          <span className="text-xs font-medium">Voice</span>
-        </CyberButton>
-        <CyberButton
-          variant="ghost"
-          onClick={() => setActiveTab("colors")}
-          className="flex-col h-20 gap-2 hover:bg-bridgit-secondary/10"
-        >
-          <Palette className="h-5 w-5 text-bridgit-secondary" />
-          <span className="text-xs font-medium">Theme</span>
-        </CyberButton>
-      </div>
-
-      {/* Pricing & Settings */}
-      <div className="grid grid-cols-2 gap-3">
-        <CyberButton
-          variant="ghost"
-          onClick={() => setActiveTab("pricing")}
-          className="flex-col h-20 gap-2 hover:bg-bridgit-gold/10"
-        >
-          <CreditCard className="h-5 w-5 text-bridgit-gold" />
-          <span className="text-xs font-medium">Pricing</span>
-        </CyberButton>
-        <CyberButton
-          variant="ghost"
-          onClick={() => setActiveTab("settings")}
-          className="flex-col h-20 gap-2 hover:bg-bridgit-accent/10"
-        >
-          <Settings className="h-5 w-5 text-bridgit-accent" />
-          <span className="text-xs font-medium">Settings</span>
-        </CyberButton>
+        {/* Quick Settings Grid */}
+        <div className="grid grid-cols-4 gap-3">
+          <CyberButton
+            variant="ghost"
+            onClick={() => setActiveTab("voice")}
+            className="flex-col h-24 gap-2 hover:bg-bridgit-primary/10 rounded-xl"
+          >
+            <Volume2 className="h-6 w-6 text-bridgit-primary" />
+            <span className="text-xs font-medium">Voice</span>
+          </CyberButton>
+          <CyberButton
+            variant="ghost"
+            onClick={() => setActiveTab("colors")}
+            className="flex-col h-24 gap-2 hover:bg-bridgit-secondary/10 rounded-xl"
+          >
+            <Palette className="h-6 w-6 text-bridgit-secondary" />
+            <span className="text-xs font-medium">Theme</span>
+          </CyberButton>
+          <CyberButton
+            variant="ghost"
+            onClick={() => setActiveTab("pricing")}
+            className="flex-col h-24 gap-2 hover:bg-bridgit-gold/10 rounded-xl"
+          >
+            <CreditCard className="h-6 w-6 text-bridgit-gold" />
+            <span className="text-xs font-medium">Pricing</span>
+          </CyberButton>
+          <CyberButton
+            variant="ghost"
+            onClick={() => setActiveTab("settings")}
+            className="flex-col h-24 gap-2 hover:bg-bridgit-accent/10 rounded-xl"
+          >
+            <Settings className="h-6 w-6 text-bridgit-accent" />
+            <span className="text-xs font-medium">Settings</span>
+          </CyberButton>
+        </div>
       </div>
     </div>
   );
@@ -435,7 +425,7 @@ export function MainMenu({
     <div className="fixed inset-0 bg-black/50 backdrop-blur-xl z-50 flex items-center justify-center p-4 animate-slide-up">
       <HoloCard
         variant="premium"
-        className="w-full max-w-md max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-lg max-h-[90vh] overflow-y-auto scrollbar-hidden"
         glow
         animated
       >

@@ -177,25 +177,19 @@ export function CyberVoiceCard({
         </CyberButton>
       </div>
 
-      {/* User Indicator */}
-      <div className="text-center">
-        <div className="text-xs text-muted-foreground">
-          {isRemoteSession ? (
-            sessionCode ? (
-              <span>
-                Session:{" "}
-                <span className="font-mono text-bridgit-primary">
-                  {sessionCode}
-                </span>
+      {/* Session Status */}
+      {isRemoteSession && sessionCode && (
+        <div className="text-center">
+          <div className="text-xs text-muted-foreground">
+            <span>
+              Session:{" "}
+              <span className="font-mono text-bridgit-primary">
+                {sessionCode}
               </span>
-            ) : (
-              "Remote Mode"
-            )
-          ) : (
-            "Local Translation Mode"
-          )}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Touchless Instructions */}
       {isListening && state === "IDLE" && (
