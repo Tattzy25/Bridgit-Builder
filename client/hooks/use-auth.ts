@@ -60,6 +60,7 @@ export function useAuth(): AuthState {
 }
 
 // TODO: Replace with actual Clerk auth implementation
+// Uncomment and use this when Clerk is integrated:
 /*
 import { useAuth as useClerkAuth, useUser } from '@clerk/nextjs';
 
