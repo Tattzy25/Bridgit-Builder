@@ -37,6 +37,36 @@ export default function Index() {
   const handleModeChange = (newMode: "just-me" | "talk-together") => {
     setMode(newMode);
     setIsMenuOpen(false);
+    // End session if switching from Just Me to Talk Together
+    if (newMode === "talk-together" && sessionCode) {
+      handleEndSession();
+    }
+  };
+
+  const handleHostSession = () => {
+    // Generate session code (in production, this would come from Ably)
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    setSessionCode(code);
+    setIsConnected(true);
+    setIsHost(true);
+    setIsMenuOpen(false);
+  };
+
+  const handleJoinSession = () => {
+    // In production, this would show a modal to enter session code
+    const code = prompt("Enter session code:");
+    if (code) {
+      setSessionCode(code.toUpperCase());
+      setIsConnected(true);
+      setIsHost(false);
+      setIsMenuOpen(false);
+    }
+  };
+
+  const handleEndSession = () => {
+    setSessionCode(null);
+    setIsConnected(false);
+    setIsHost(false);
   };
 
   const BridgitLogo = () => (
@@ -216,6 +246,11 @@ export default function Index() {
         onClose={() => setIsMenuOpen(false)}
         onModeChange={handleModeChange}
         currentMode={mode}
+        sessionCode={sessionCode}
+        isConnected={isConnected}
+        onHostSession={handleHostSession}
+        onJoinSession={handleJoinSession}
+        onEndSession={handleEndSession}
       />
     </>
   );
