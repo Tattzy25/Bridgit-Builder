@@ -22,6 +22,11 @@ interface MainMenuProps {
   onClose: () => void;
   onModeChange: (mode: "just-me" | "talk-together") => void;
   currentMode: "just-me" | "talk-together";
+  sessionCode?: string | null;
+  isConnected?: boolean;
+  onHostSession?: () => void;
+  onJoinSession?: () => void;
+  onEndSession?: () => void;
 }
 
 export function MainMenu({
@@ -29,6 +34,11 @@ export function MainMenu({
   onClose,
   onModeChange,
   currentMode,
+  sessionCode = null,
+  isConnected = false,
+  onHostSession = () => {},
+  onJoinSession = () => {},
+  onEndSession = () => {},
 }: MainMenuProps) {
   const [activeTab, setActiveTab] = useState<
     "main" | "settings" | "colors" | "voice"
@@ -43,6 +53,43 @@ export function MainMenu({
           Bridgit AI
         </h2>
         <p className="text-xs text-muted-foreground">Neural Translation Hub</p>
+
+        {/* Status Section */}
+        <div className="mt-4 p-3 rounded-neu bg-neubg/30 border border-white/10">
+          <div className="flex items-center justify-center gap-2 text-sm">
+            <div
+              className={cn(
+                "w-2 h-2 rounded-full",
+                isConnected
+                  ? "bg-bridgit-neon animate-glow-pulse"
+                  : "bg-muted/50",
+              )}
+            />
+            <span
+              className={cn(
+                "font-medium",
+                isConnected ? "text-bridgit-neon" : "text-muted-foreground",
+              )}
+            >
+              {isConnected ? "Neural Link Active" : "Neural Link Offline"}
+            </span>
+          </div>
+
+          {sessionCode && (
+            <div className="mt-2 text-xs text-center">
+              <span className="text-muted-foreground">Session: </span>
+              <span className="font-mono text-bridgit-primary">
+                {sessionCode}
+              </span>
+            </div>
+          )}
+
+          {isConnected && (
+            <div className="mt-2 text-xs text-center text-muted-foreground">
+              🔐 End-to-End Encrypted • Real-time Sync
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Mode Selection */}
@@ -78,20 +125,58 @@ export function MainMenu({
           Session Control
         </h3>
         <div className="space-y-3">
-          <CyberButton variant="neon" className="w-full justify-start gap-3">
-            <UserPlus className="h-5 w-5" />
-            <div className="text-left">
-              <div className="font-semibold">Host Session</div>
-              <div className="text-xs opacity-80">Create secure room</div>
+          {currentMode === "just-me" ? (
+            <>
+              {!sessionCode ? (
+                <>
+                  <CyberButton
+                    variant="neon"
+                    className="w-full justify-start gap-3"
+                    onClick={onHostSession}
+                  >
+                    <UserPlus className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-semibold">Host Session</div>
+                      <div className="text-xs opacity-80">
+                        Create secure room
+                      </div>
+                    </div>
+                  </CyberButton>
+                  <CyberButton
+                    variant="primary"
+                    className="w-full justify-start gap-3"
+                    onClick={onJoinSession}
+                  >
+                    <Users className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-semibold">Join Session</div>
+                      <div className="text-xs opacity-80">Enter room code</div>
+                    </div>
+                  </CyberButton>
+                </>
+              ) : (
+                <CyberButton
+                  variant="ghost"
+                  className="w-full justify-start gap-3 border-red-500/20 text-red-400"
+                  onClick={onEndSession}
+                >
+                  <X className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-semibold">End Session</div>
+                    <div className="text-xs opacity-80">
+                      Disconnect from room
+                    </div>
+                  </div>
+                </CyberButton>
+              )}
+            </>
+          ) : (
+            <div className="text-center p-4 text-muted-foreground text-sm">
+              Talk Together mode uses local translation only.
+              <br />
+              Switch to "Just Me" for remote sessions.
             </div>
-          </CyberButton>
-          <CyberButton variant="primary" className="w-full justify-start gap-3">
-            <Users className="h-5 w-5" />
-            <div className="text-left">
-              <div className="font-semibold">Join Session</div>
-              <div className="text-xs opacity-80">Enter room code</div>
-            </div>
-          </CyberButton>
+          )}
         </div>
       </div>
 
